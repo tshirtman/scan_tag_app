@@ -1,0 +1,209 @@
+#:import Path pathlib.Path
+#:import datetime datetime.datetime
+#:import A kivy.animation.Animation
+
+ScreenManager:
+    EntriesScreen:
+    EntryEditor:
+
+
+<EntriesScreen@Screen>:
+    name: 'entries'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: "10dp"
+        spacing: "10dp"
+        QRScanButton:
+        RecycleView:
+            data: app.entries
+            RecycleBoxLayout:
+                size_hint_y: None
+                orientation: 'vertical'
+                viewclass: 'EntryRow'
+                height: self.minimum_height
+                default_size_hint: 1, None
+                default_size: 0, '40dp'
+
+<EntryRow>:
+    id: ""
+    on_release: app.edit_entry(self.id or "")
+    Image:
+        source: str(Path(app.user_data_dir, "pictures", root.id or ""))
+        size_hint_x: None
+        width: root.height
+    Label:
+        text: root.id or ""
+
+
+<TextFieldEditPopup>:
+    index: 0
+    name: ""
+    value: ""
+
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: "name"
+        TextInput:
+            id: ti_name
+            text: root.name
+        
+        Label:
+            text: "value"
+        TextInput:
+            id: ti_value
+            text: root.value
+        
+        BoxLayout:
+            Button:
+                text: 'cancel'
+                on_release: root.dismiss()
+            Button:
+                text: 'save'
+                on_release:
+                    app.save_text_field(root.index, ti_name.text, ti_value.text)
+                    root.dismiss()
+
+
+<QRScanButton@Button>:
+    text: 'scan id'
+    size_hint_y: None
+    height: "40dp"
+    on_release: app.scan_id()
+
+
+<PictureButton@Button>:
+    text: 'picture'
+    size_hint_y: None
+    height: "40dp"
+
+    on_release: app.snap_picture(self)
+
+<AddButton@ButtonBehavior+Widget>:
+    size_hint: None, None
+    size: "40dp", "40dp"
+    zoom: 1.0
+    on_state:
+        A.cancel_all(self, 'zoom')
+        A(zoom=1.1 if self.state == 'down' else 1.0, d=.3, t='out_quad').start(self)
+
+    canvas:
+        PushMatrix:
+        Scale:
+            xyz: [self.zoom] * 3
+            origin: self.center
+
+        Color:
+        Line:
+            width: dp(2)
+            ellipse: self.pos + self.size
+        Line:
+            width: dp(2)
+            points:
+                (
+                self.x + dp(10), self.center_y,
+                self.right - dp(10), self.center_y
+                )
+        Line:
+            width: dp(2)
+            points:
+                (
+                self.center_x, self.y + dp(10),
+                self.center_x, self.top - dp(10)
+                )
+        PopMatrix:
+
+
+<EditButton@Button>:
+    size_hint_y: None
+    width: self.height
+    text: 'e'
+
+
+<DeleteButton@Button>:
+    size_hint_y: None
+    width: self.height
+    text: 'x'
+
+
+<TextField@BoxLayout>:
+    size_hint_y: None
+    height: self.minimum_height
+    index: 0
+    name: ""
+    value: ""
+    Label:
+        text: root.name
+        size_hint_y: None
+        height: "38dp"
+    Label:
+        text: root.value
+        size_hint_y: None
+        height: "38dp"
+        text_size: self.size
+        shorten: True
+
+    EditButton:
+        on_release: app.edit_text_field(index=root.index)
+    DeleteButton:
+        on_release: app.remove_text_field(index=root.index)
+
+
+<EditableEntriesList@RelativeLayout>:
+    targe_id: None
+
+    RecycleView:
+        data:
+            [
+            {"index": i, "name": item["name"], "value": item["value"]}
+            for i, item in 
+            enumerate((app.target_entry or {}).get('text_fields', []))
+            ]
+
+        RecycleBoxLayout:
+            orientation: "vertical"
+            size_hint_y: None
+            height: self.minimum_height
+            viewclass: 'TextField'
+            default_size_hint: 1, None
+
+    AddButton:
+        on_release: app.edit_text_field()
+        pos_hint: {'right': 1, 'y': 0}
+        
+        
+<AppButton@Button>:
+    size_hint_y: None
+    height: "40dp"
+
+<CancelButton@AppButton>:
+    text: "cancel"
+
+<SaveButton@AppButton>:
+    text: "save"
+
+
+<EntryEditor@Screen>:
+    name: "editor"
+    picture: ""
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: "10dp"
+        spacing: "10dp"
+        Label:
+            text: (app.target_entry).get("id", "")
+            size_hint_y: None
+            height: self.texture_size[1]
+        PictureButton:
+            picture: root.picture
+        EditableEntriesList:
+            entries: (app.target_entry).get("text_fields", [])
+        BoxLayout:
+            spacing: "10dp"
+            size_hint_y: None
+            height: self.minimum_height
+            CancelButton:
+                on_release: app.switch_screen("entries")
+            SaveButton:
+                on_release: app.save()
