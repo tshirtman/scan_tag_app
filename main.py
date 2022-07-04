@@ -6,7 +6,7 @@ from os import rename
 from kivy.utils import platform
 from kivy.app import App
 from kivy.factory import Factory as F
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.resources import resource_add_path
 
 from xcamera.xcamera import XCamera
@@ -63,6 +63,7 @@ class Application(App):
             ).with_suffix(".jpeg")
         )
 
+    @mainthread
     def save_picture(self, camera, filename):
         rename(filename, self.picture_for(self.target_entry["id"]))
         self.root.get_screen("editor").ids.picture.reload()
