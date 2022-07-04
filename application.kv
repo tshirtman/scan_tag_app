@@ -1,11 +1,81 @@
 #:import Path pathlib.Path
 #:import datetime datetime.datetime
 #:import A kivy.animation.Animation
+#:import is_android zbarcam.utils.is_android
+#:import F kivy.factory.Factory
 
 ScreenManager:
     EntriesScreen:
     EntryEditor:
 
+
+<ZBarCamPopup@Popup>:
+    BoxLayout:
+        orientation: "vertical"
+        ZBarCam:
+            id: zbarcam
+        RecycleView:
+            viewclass: "ZBarSelectButton"
+            data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
+            RecycleBoxLayout:
+                size_hint_y: None
+                height: self.minimum_height
+                default_size_hint: 1, None
+                default_size: 0, "40dp"
+
+
+<ZBarSelectButton@Button>:
+    popup: None
+    on_release:
+        self.popup.ids.zbarcam.play = False
+        self.popup.dismiss() if self.popup else None
+        app.edit_entry(self.text)
+
+
+<XCameraPopup@Popup>:
+    Widget:
+        id: proxy
+        XCamera:
+            id: camera
+            play: True
+            resolution: 640, 480
+            allow_stretch: True
+            keep_ratio: True
+            center: self.size and proxy.center
+            size:
+                (proxy.height, proxy.width) if is_android() \
+                else (proxy.width, proxy.height)
+            icon_color: (0.13, 0.58, 0.95, 0.8)
+            icon_size: dp(70)
+
+            resolution: 640, 480 # 1920, 1080
+            allow_stretch: True
+            directory: app.user_data_dir
+
+            # Android camera rotation workaround, refs:
+            # https://github.com/AndreMiras/garden.zbarcam/issues/3
+            on_picture_taken:
+                app.save_picture(*args)
+                root.dismiss()
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: -90 if is_android() else 0
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+
+        XCameraIconButton:
+            id: shoot_button
+            markup: True
+            text: "shoot"
+            icon_color: camera.icon_color
+            icon_size: camera.icon_size
+            # position
+            right: proxy.width - dp(10)
+            center_y: proxy.center_y
+
+            on_release: camera.shoot()
 
 <EntriesScreen@Screen>:
     name: 'entries'
@@ -28,7 +98,7 @@ ScreenManager:
     id: ""
     on_release: app.edit_entry(self.id or "")
     Image:
-        source: str(Path(app.user_data_dir, "pictures", root.id or ""))
+        source: app.picture_for(root.id)
         size_hint_x: None
         width: root.height
     Label:
@@ -76,8 +146,7 @@ ScreenManager:
     text: 'picture'
     size_hint_y: None
     height: "40dp"
-
-    on_release: app.snap_picture(self)
+    on_release: app.snap_picture()
 
 <AddButton@ButtonBehavior+Widget>:
     size_hint: None, None
@@ -134,6 +203,7 @@ ScreenManager:
     value: ""
     Label:
         text: root.name
+        multiline: False
         size_hint_y: None
         height: "38dp"
     Label:
@@ -183,20 +253,47 @@ ScreenManager:
     text: "save"
 
 
+<ZoomImagePopup@Popup>:
+    BoxLayout:
+        orientation: "vertical"
+        Widget:
+            Scatter:
+                size: image.size
+                Image:
+                    id: image
+                    source: app.picture_for((app.target_entry).get("id"))
+                    size: self.texture_size
+        Button:
+            size_hint_y: None
+            height: "40dp"
+            text: "close"
+            on_release: root.dismiss()
+
+
+<ZoomableImage@ButtonBehavior+Image>:
+    on_release: F.ZoomImagePopup().open()
+
+
 <EntryEditor@Screen>:
     name: "editor"
-    picture: ""
+    item_id: (app.target_entry).get("id", "")
 
     BoxLayout:
         orientation: "vertical"
         padding: "10dp"
         spacing: "10dp"
         Label:
-            text: (app.target_entry).get("id", "")
+            text: root.item_id or ""
             size_hint_y: None
             height: self.texture_size[1]
+
         PictureButton:
-            picture: root.picture
+            take_picture: picture
+
+        ZoomableImage:
+            id: picture
+            source: app.picture_for(root.item_id)
+            
         EditableEntriesList:
             entries: (app.target_entry).get("text_fields", [])
         BoxLayout:
