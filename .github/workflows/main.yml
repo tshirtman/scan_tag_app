@@ -12,6 +12,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # this cache can live a long time
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v2
+        with:
+          path: .buildozer_global
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+
+      # this cache should be shorter-lived, daily is not bad, but could be weekly or monthly
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v2
+        with:
+          path: .buildozer
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }}-${{ steps.date.outputs.date }}
+
       - name: Build with Buildozer
         uses: ArtemSBulgakov/buildozer-action@v1
         id: buildozer
