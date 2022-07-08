@@ -1,0 +1,11 @@
+--- a/setup.py	2022-07-03 17:18:53.094885187 +0200
++++ b/setup.py	2022-07-03 17:18:00.026175799 +0200
+@@ -143,7 +143,7 @@
+ 
+         kwargs["ext_modules"] = []
+ 
+-    setup(version=VERSION, cmdclass=cmdclass, distclass=Distribution, **kwargs)
++    setup(version=VERSION, cmdclass=cmdclass, distclass=Distribution, zip_safe=False, **kwargs)
+ 
+ 
+ if not cpython:
