@@ -43,7 +43,7 @@ requirements =
     kivy,
     libzbar,
     sqlalchemy==1.4.39,
-    Pillow==7.0.0,
+    Pillow,
     python3==3.8.1,
     pyzbar==0.1.8,
     xcamera==2020.613,
