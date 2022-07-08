@@ -54,12 +54,19 @@ class Application(App):
             id = str(uuid4())
             Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
 
+    @staticmethod
+    def sanitize(image_name):
+        if image_name.startswith("http"):
+            parsed = urlparse(image_name)
+            return f"{parsed.netloc}_{parsed.path.replace("/", "_")}_{parsed.params}_{parsed.query.quote())}"
+        return image_name
+    
     def picture_for(self, target_id):
         return str(
             Path(
                 self.user_data_dir,
                 "pictures",
-                target_id or ""
+                self.sanitize(target_id or "")
             ).with_suffix(".jpeg")
         )
 
