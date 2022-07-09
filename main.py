@@ -1,4 +1,3 @@
-# vim: number nowrap
 from pathlib import Path
 from uuid import uuid4
 import logging
@@ -14,7 +13,6 @@ from xcamera.xcamera import XCamera
 from zbarcam.zbarcam import ZBarCam
 
 from db import get_engine, save_entry, get_entry, get_entries
-
 import settings
 
 resource_add_path("./xcamera/")
@@ -32,17 +30,16 @@ class TextFieldEditPopup(F.Popup):
     key = F.StringProperty()
     value = F.StringProperty()
 
-
 #
 # Kivy Application
 #
-class mTag(App):
+class Application(App):
     target_entry = F.DictProperty()
     entries = F.ListProperty()
 
     def __init__(self):
         super().__init__()
-        self.db = get_engine(Path(self.user_data_dir) / sqldb)
+        self.db = get_engine(Path(self.user_data_dir) / settings.sqldb)
         self.load_entries()
         Path(self.user_data_dir, settings.bindir).mkdir(parents=True, exist_ok=True)
 
@@ -66,13 +63,14 @@ class mTag(App):
     @staticmethod
     def sanitize(image_name):
         for u in settings.strprefix:
-            image_name.lstrp(u)
+            image_name.lstrip(u)
         if image_name.startswith('http'):
             parsed = urlparse(image_name)
             return f"{parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query.quote()}"
         else:
             return image_name.replace('/', '_')
-    
+
+
     def picture_for(self, target_id):
         return str(
             Path(
@@ -90,6 +88,9 @@ class mTag(App):
                 self.sanitize(target_id) if target_id else '_'
             ).with_suffix(".jpeg")
         )
+
+    def user_dir_do_something(self):
+        pass
 
     @mainthread
     def save_picture(self, camera, filename):
@@ -143,4 +144,4 @@ class mTag(App):
         self.target_entry["text_fields"] = text_fields
 
 if __name__ == '__main__':
-    mTag().run()
+    Application().run()

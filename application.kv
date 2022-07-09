@@ -1,4 +1,4 @@
-# vim: number nowrap
+# vim: ts=4 number nowrap
 #:import Path pathlib.Path
 #:import datetime datetime.datetime
 #:import A kivy.animation.Animation
@@ -13,16 +13,15 @@ ScreenManager:
 
 
 <ZBarCamPopup@Popup>:
-    Title: "Scan QRcode for uuid"
     BoxLayout:
         orientation: "vertical"
         ZBarCam:
             id: zbarcam
         RecycleView:
-            orientation: "vertical"
             viewclass: "ZBarSelectButton"
             data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
             RecycleBoxLayout:
+                orientation: "vertical"
                 size_hint_y: None
                 height: self.minimum_height
                 default_size_hint: 1, None
@@ -52,7 +51,7 @@ ScreenManager:
             icon_color: (0.13, 0.58, 0.95, 0.8)
             icon_size: dp(70)
 
-            resolution: 1920, 1080        # 640, 480 # 
+            resolution: 640, 480 # 1920, 1080
             allow_stretch: True
             directory: app.user_data_dir
 
@@ -76,7 +75,6 @@ ScreenManager:
             icon_color: camera.icon_color
             icon_size: camera.icon_size
             # position
-            #right: proxy.width - dp(10)
             top: proxy.height - dp(10)
             center_x: proxy.center_x
 
@@ -104,7 +102,8 @@ ScreenManager:
     id: ""
     on_release: app.edit_entry(self.id or "")
     Image:
-        source: app.thumbnail_for(root.id)
+        source: app.picture_for(root.id)
+        #source: app.thumbnail_for(root.id)
         size_hint_x: None
         width: root.height
     Label:
@@ -112,45 +111,66 @@ ScreenManager:
 
 
 <TextFieldEditPopup>:
+    # TODO set title
     index: 0
-    name: ""
+    key: ""
     value: ""
 
     BoxLayout:
         orientation: "vertical"
 
         BoxLayout:
+            size_hint_y: None
             Button:
                 text: 'cancel'
                 on_release: root.dismiss()
+                background_color: (1,0,0,1)
+            Button:
+                text: 'save & add \nanother'
+                #background_color: (0,1,0,1)
+                size_hint_x: 2
+                # on_release:     # TODO save this value and reopen this dialog
             Button:
                 text: 'save'
+                background_color: (0,1,0,1)
                 size_hint_x: 2
                 on_release:
                     app.save_text_field(root.index, ti_key.text, ti_value.text)
                     root.dismiss()
+                    # TODO scan new item
 
         BoxLayout:
-            Label:
-                text: "key"
-                height: wheight
-                size_hint_x: 2
+            size_hint_y: None
+            height: Wheight
             Button:
+                text: "key"
+                size_hint: 2, None
+                height: Wheight
+                # on_release: TODO select from list
+            Button:
+                size_hint_y: None
+                height: Wheight
                 text: 'QR'
-                on_release: app.scan_input(ti_key)
+                #on_release: app.scan_input(ti_key)
         TextInput:
+            size_hint_y: None
             id: ti_key
             text: root.key
             height: wheight
         
         BoxLayout:
-            Label:
+            size_hint_y: None
+            height: Wheight
+            Button:
                 text: "value"
-                height: wheight
-                size_hint_x: 2
+                size_hint: 2, None
+                height: Wheight
+                # on_release: TODO select from list
             Button:
                 text: 'QR'
-                on_release: app.scan_input(ti_value)
+                size_hint_y: None
+                height: Wheight
+                #on_release: app.scan_input(ti_value)
         TextInput:
             id: ti_value
             text: root.value
@@ -161,18 +181,26 @@ ScreenManager:
     size_hint_y: None
     height: Wheight
     on_release: app.scan_id()
+    background_color: (.99,.75,0.25,1)
 
 <DataDirButton@Button>:
     text: app.user_data_dir
     size_hint_y: None
-    height: Wheight
+    height: wheight
     on_release: app.user_dir_do_something()
 
+<EditPictureButton@Button>:
+    text: 'edit photo'
+    size_hint: 1, None
+    height: Wheight
+    # on_release: TODO
+
 <PictureButton@Button>:
-    text: 'change photo (camera)'
-    size_hint_y: None
+    text: 'change photo\n(camera)'
+    size_hint: 2, None
     height: Wheight
     on_release: app.snap_picture()
+    background_color: (0,0,1,1)
 
 <AddButton@ButtonBehavior+Widget>:
     size_hint: None, None
@@ -211,12 +239,14 @@ ScreenManager:
 
 <EditButton@Button>:
     size_hint_y: None
+    #width: self.height
     size: wheight, wheight
     text: 'e'
 
 
 <DeleteButton@Button>:
     size_hint_y: None
+    #width: self.height
     size: wheight, wheight
     text: 'x'
 
@@ -225,10 +255,10 @@ ScreenManager:
     size_hint_y: None
     height: self.minimum_height
     index: 0
-    name: ""
+    key: ""
     value: ""
     Label:
-        text: root.name
+        text: root.key
         multiline: False
         size_hint_y: None
         height: wheight
@@ -274,11 +304,12 @@ ScreenManager:
 
 <CancelButton@AppButton>:
     text: "cancel"
-    height: Wheight
+    background_color: (1,0,0,1)
 
 <SaveButton@AppButton>:
     text: "save"
-    height: Wheight
+    size_hint_x: 2
+    background_color: (0,1,0,1)
 
 
 <ZoomImagePopup@Popup>:
@@ -315,8 +346,13 @@ ScreenManager:
             size_hint_y: None
             height: self.texture_size[1]
 
-        PictureButton:
-            take_picture: picture
+        BoxLayout:
+            size_hint_y: None
+            height: Wheight
+            EditPictureButton:
+                # TODO
+            PictureButton:
+                take_picture: picture
 
         ZoomableImage:
             id: picture
