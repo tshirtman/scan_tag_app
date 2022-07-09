@@ -19,6 +19,8 @@ from zbarcam.zbarcam import ZBarCam
 from db import get_engine, save_entry, get_entry, get_entries
 import settings
 
+THUMBNAILS = False
+
 resource_add_path("./xcamera/")
 
 logging.basicConfig()
@@ -46,7 +48,7 @@ class Application(App):
         self.db = get_engine(Path(self.user_data_dir) / settings.sqldb)
         self.load_entries()
         #Path(self.user_data_dir, settings.bindir).mkdir(parents=True, exist_ok=True)
-        Path(self.user_data_dir, settings.thumbdir).mkdir(parents=True, exist_ok=True)
+        if THUMBNAILS: Path(self.user_data_dir, settings.thumbdir).mkdir(parents=True, exist_ok=True)
         #self.db = get_engine(Path(self.user_data_dir) / 'data.sqlite3')
         self.db = get_engine(self.db_path)
         #Path(self.user_data_dir, 'pictures').mkdir(parents=True, exist_ok=True)
@@ -111,7 +113,7 @@ class Application(App):
 
 
     def picture_for(self, target_id, thumbnail = False):
-        if thumbnail:
+        if THUMBNAILS and thumbnail:
             return str(
                 Path(
                     self.user_data_dir,
@@ -135,12 +137,13 @@ class Application(App):
     def save_picture(self, camera, filename):
         rename(filename, self.picture_for(self.target_entry["id"]))
 
-        # thumbnail generation
-        from PIL import Image
-        im = Image.open(filename)
-        im = im.resize(settings.thumbsize)
-        im.save(filename.replace(bindir,thumbdir))
-        im.close()
+        if THUMBNAILS:
+            # thumbnail generation
+            from PIL import Image
+            im = Image.open(filename)
+            im = im.resize(settings.thumbsize)
+            im.save(filename.replace(bindir,thumbdir))
+            im.close()
 
         self.root.get_screen("editor").ids.picture.reload()
 
