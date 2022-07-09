@@ -75,7 +75,7 @@ ScreenManager:
             icon_color: camera.icon_color
             icon_size: camera.icon_size
             # position
-            top: proxy.height - dp(10)
+            bottom: proxy.height - dp(10)
             center_x: proxy.center_x
 
             on_release: camera.shoot()
@@ -102,8 +102,7 @@ ScreenManager:
     id: ""
     on_release: app.edit_entry(self.id or "")
     Image:
-        source: app.picture_for(root.id)
-        #source: app.thumbnail_for(root.id)
+        source: app.picture_for(root.id, True)
         size_hint_x: None
         width: root.height
     Label:

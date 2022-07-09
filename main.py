@@ -1,3 +1,4 @@
+# vim: ts=4 number nowrap
 from pathlib import Path
 from uuid import uuid4
 import logging
@@ -42,6 +43,7 @@ class Application(App):
         self.db = get_engine(Path(self.user_data_dir) / settings.sqldb)
         self.load_entries()
         Path(self.user_data_dir, settings.bindir).mkdir(parents=True, exist_ok=True)
+        Path(self.user_data_dir, settings.thumbdir).mkdir(parents=True, exist_ok=True)
 
     def load_entries(self):
         self.entries = get_entries(self.db)
@@ -71,23 +73,23 @@ class Application(App):
             return image_name.replace('/', '_')
 
 
-    def picture_for(self, target_id):
-        return str(
-            Path(
-                self.user_data_dir,
-                settings.bindir,
-                self.sanitize(target_id) if target_id else '_'
-            ).with_suffix(".jpeg")
-        )
-
-    def thumbnail_for(self, target_id):
-        return str(
-            Path(
-                self.user_data_dir,
-                settings.thumbdir,
-                self.sanitize(target_id) if target_id else '_'
-            ).with_suffix(".jpeg")
-        )
+    def picture_for(self, target_id, thumbnail = False):
+        if thumbnail:
+            return str(
+                Path(
+                    self.user_data_dir,
+                    settings.thumbdir,
+                    self.sanitize(target_id) if target_id else '_'
+                ).with_suffix(".jpeg")
+            )
+        else:
+            return str(
+                Path(
+                    self.user_data_dir,
+                    settings.bindir,
+                    self.sanitize(target_id) if target_id else '_'
+                ).with_suffix(".jpeg")
+            )
 
     def user_dir_do_something(self):
         pass
