@@ -80,10 +80,9 @@ class Application(App):
                 print(", ".join(zf.namelist()))
 
             print(f"export complete: {zip_file} {zip_file.exists()}")
-            shared_path = ss.copy_to_shared(zip_file.as_uri())
+            shared_path = ss.copy_to_shared(str(zip_file))
             print("before sharing")
-            # request_permissions([Permission.WRITE_EXTERNAL_STORAGE])
-            ShareSheet().share_file_list([shared_path])
+            ShareSheet().share_file(shared_path)
             print("after sharing")
 
     def picture_for(self, target_id):
