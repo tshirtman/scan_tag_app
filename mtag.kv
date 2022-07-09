@@ -19,6 +19,7 @@ ScreenManager:
         ZBarCam:
             id: zbarcam
         RecycleView:
+            orientation: "vertical"
             viewclass: "ZBarSelectButton"
             data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
             RecycleBoxLayout:
@@ -51,7 +52,7 @@ ScreenManager:
             icon_color: (0.13, 0.58, 0.95, 0.8)
             icon_size: dp(70)
 
-            resolution: 1920, 1080	# 640, 480 # 
+            resolution: 1920, 1080        # 640, 480 # 
             allow_stretch: True
             directory: app.user_data_dir
 
@@ -97,7 +98,7 @@ ScreenManager:
                 height: self.minimum_height
                 default_size_hint: 1, None
                 default_size: 0, wheight
-	DataDirButton:
+        DataDirButton:
 
 <EntryRow>:
     id: ""
@@ -124,22 +125,32 @@ ScreenManager:
                 on_release: root.dismiss()
             Button:
                 text: 'save'
-		size_hint_x: 2
+                size_hint_x: 2
                 on_release:
                     app.save_text_field(root.index, ti_key.text, ti_value.text)
                     root.dismiss()
 
-        Label:
-            text: "key"
-	    height: wheight
+        BoxLayout:
+            Label:
+                text: "key"
+                height: wheight
+                size_hint_x: 2
+            Button:
+                text: 'QR'
+                on_release: app.scan_input(ti_key)
         TextInput:
             id: ti_key
             text: root.key
-	    height: wheight
+            height: wheight
         
-        Label:
-            text: "value"
-	    height: wheight
+        BoxLayout:
+            Label:
+                text: "value"
+                height: wheight
+                size_hint_x: 2
+            Button:
+                text: 'QR'
+                on_release: app.scan_input(ti_value)
         TextInput:
             id: ti_value
             text: root.value
@@ -157,9 +168,8 @@ ScreenManager:
     height: Wheight
     on_release: app.user_dir_do_something()
 
-# TODO merge this with white photo placeholder ; replace white placeholder with text or camera icon
 <PictureButton@Button>:
-    text: 'set photo'
+    text: 'change photo (camera)'
     size_hint_y: None
     height: Wheight
     on_release: app.snap_picture()

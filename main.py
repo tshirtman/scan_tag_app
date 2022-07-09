@@ -36,7 +36,7 @@ class TextFieldEditPopup(F.Popup):
 #
 # Kivy Application
 #
-class mTag:
+class mTag(App):
     target_entry = F.DictProperty()
     entries = F.ListProperty()
 
@@ -59,6 +59,9 @@ class mTag:
             # temporary hack to simulate scanning a code
             id = str(uuid4())
             Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
+
+    def scan_input(self, field):
+        """ TODO set text input field to content of next QR code (open popup) ; set focus to next input field """
 
     @staticmethod
     def sanitize(image_name):
@@ -140,4 +143,4 @@ class mTag:
         self.target_entry["text_fields"] = text_fields
 
 if __name__ == '__main__':
-    Application().run()
+    mTag().run()
