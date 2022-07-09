@@ -93,6 +93,12 @@ ScreenManager:
                 height: self.minimum_height
                 default_size_hint: 1, None
                 default_size: 0, '40dp'
+        Button:
+            text: "export DB"
+            size_hint_y: None
+            height: "40dp"
+            on_press: app.export_db()
+
 
 <EntryRow>:
     id: ""
@@ -236,6 +242,7 @@ ScreenManager:
             height: self.minimum_height
             viewclass: 'TextField'
             default_size_hint: 1, None
+            default_size: 0, "40dp"
 
     AddButton:
         on_release: app.edit_text_field()

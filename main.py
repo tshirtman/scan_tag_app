@@ -2,6 +2,9 @@ from pathlib import Path
 from uuid import uuid4
 import logging
 from os import rename
+from os.path import join
+from zipfile import ZipFile
+from datetime import datetime
 
 from kivy.utils import platform
 from kivy.app import App
@@ -36,9 +39,17 @@ class Application(App):
 
     def __init__(self):
         super().__init__()
-        self.db = get_engine(Path(self.user_data_dir) / 'data.sqlite3')
+        self.db = get_engine(self.db_path)
         self.load_entries()
-        Path(self.user_data_dir, 'pictures').mkdir(parents=True, exist_ok=True)
+        self.pictures_path.mkdir(parents=True, exist_ok=True)
+
+    @property
+    def db_path(self) -> Path:
+        return Path(self.user_data_dir) / 'data.sqlite3'
+
+    @property
+    def pictures_path(self) -> Path:
+        return Path(self.user_data_dir, 'pictures')
 
     def load_entries(self):
         self.entries = get_entries(self.db)
@@ -53,6 +64,27 @@ class Application(App):
             # temporary hack to simulate scanning a code
             id = str(uuid4())
             Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
+
+    def export_db(self, *args):
+        if platform == 'android':
+            from androidstorage4kivy import SharedStorage, ShareSheet
+            from androidstorage4kivy.sharedstorage import MediaStoreDownloads
+            from android.permissions import Permission, request_permissions
+
+            ss = SharedStorage()
+            zip_file = Path(ss.get_cache_dir(), f'export-{datetime.now().isoformat()}.zip')
+            with ZipFile(zip_file, mode="w") as zf:
+                zf.write(self.db_path)
+                for picture in self.pictures_path.rglob('*.jpeg'):
+                    zf.write(picture)
+                print(", ".join(zf.namelist()))
+
+            print(f"export complete: {zip_file} {zip_file.exists()}")
+            shared_path = ss.copy_to_shared(zip_file.as_uri())
+            print("before sharing")
+            # request_permissions([Permission.WRITE_EXTERNAL_STORAGE])
+            ShareSheet().share_file_list([shared_path])
+            print("after sharing")
 
     def picture_for(self, target_id):
         return str(
