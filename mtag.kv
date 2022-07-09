@@ -1,8 +1,11 @@
+# vim: number nowrap
 #:import Path pathlib.Path
 #:import datetime datetime.datetime
 #:import A kivy.animation.Animation
 #:import is_android zbarcam.utils.is_android
 #:import F kivy.factory.Factory
+#:import wheight settings.wheight
+#:import Wheight settings.Wheight
 
 ScreenManager:
     EntriesScreen:
@@ -10,6 +13,7 @@ ScreenManager:
 
 
 <ZBarCamPopup@Popup>:
+    Title: "Scan QRcode for uuid"
     BoxLayout:
         orientation: "vertical"
         ZBarCam:
@@ -21,7 +25,7 @@ ScreenManager:
                 size_hint_y: None
                 height: self.minimum_height
                 default_size_hint: 1, None
-                default_size: 0, "40dp"
+                default_size: 0, wheight
 
 
 <ZBarSelectButton@Button>:
@@ -38,7 +42,6 @@ ScreenManager:
         XCamera:
             id: camera
             play: True
-            resolution: 640, 480
             allow_stretch: True
             keep_ratio: True
             center: self.size and proxy.center
@@ -48,7 +51,7 @@ ScreenManager:
             icon_color: (0.13, 0.58, 0.95, 0.8)
             icon_size: dp(70)
 
-            resolution: 640, 480 # 1920, 1080
+            resolution: 1920, 1080	# 640, 480 # 
             allow_stretch: True
             directory: app.user_data_dir
 
@@ -68,12 +71,13 @@ ScreenManager:
         XCameraIconButton:
             id: shoot_button
             markup: True
-            text: "shoot"
+            text: "📷"
             icon_color: camera.icon_color
             icon_size: camera.icon_size
             # position
-            right: proxy.width - dp(10)
-            center_y: proxy.center_y
+            #right: proxy.width - dp(10)
+            top: proxy.height - dp(10)
+            center_x: proxy.center_x
 
             on_release: camera.shoot()
 
@@ -92,13 +96,14 @@ ScreenManager:
                 viewclass: 'EntryRow'
                 height: self.minimum_height
                 default_size_hint: 1, None
-                default_size: 0, '40dp'
+                default_size: 0, wheight
+	DataDirButton:
 
 <EntryRow>:
     id: ""
     on_release: app.edit_entry(self.id or "")
     Image:
-        source: app.picture_for(root.id)
+        source: app.thumbnail_for(root.id)
         size_hint_x: None
         width: root.height
     Label:
@@ -112,45 +117,56 @@ ScreenManager:
 
     BoxLayout:
         orientation: "vertical"
-        Label:
-            text: "name"
-        TextInput:
-            id: ti_name
-            text: root.name
-        
-        Label:
-            text: "value"
-        TextInput:
-            id: ti_value
-            text: root.value
-        
+
         BoxLayout:
             Button:
                 text: 'cancel'
                 on_release: root.dismiss()
             Button:
                 text: 'save'
+		size_hint_x: 2
                 on_release:
-                    app.save_text_field(root.index, ti_name.text, ti_value.text)
+                    app.save_text_field(root.index, ti_key.text, ti_value.text)
                     root.dismiss()
 
+        Label:
+            text: "key"
+	    height: wheight
+        TextInput:
+            id: ti_key
+            text: root.key
+	    height: wheight
+        
+        Label:
+            text: "value"
+	    height: wheight
+        TextInput:
+            id: ti_value
+            text: root.value
+        
 
 <QRScanButton@Button>:
-    text: 'scan id'
+    text: 'scan new item'
     size_hint_y: None
-    height: "40dp"
+    height: Wheight
     on_release: app.scan_id()
 
-
-<PictureButton@Button>:
-    text: 'picture'
+<DataDirButton@Button>:
+    text: app.user_data_dir
     size_hint_y: None
-    height: "40dp"
+    height: Wheight
+    on_release: app.user_dir_do_something()
+
+# TODO merge this with white photo placeholder ; replace white placeholder with text or camera icon
+<PictureButton@Button>:
+    text: 'set photo'
+    size_hint_y: None
+    height: Wheight
     on_release: app.snap_picture()
 
 <AddButton@ButtonBehavior+Widget>:
     size_hint: None, None
-    size: "40dp", "40dp"
+    size: Wheight, Wheight
     zoom: 1.0
     on_state:
         A.cancel_all(self, 'zoom')
@@ -185,13 +201,13 @@ ScreenManager:
 
 <EditButton@Button>:
     size_hint_y: None
-    width: self.height
+    size: wheight, wheight
     text: 'e'
 
 
 <DeleteButton@Button>:
     size_hint_y: None
-    width: self.height
+    size: wheight, wheight
     text: 'x'
 
 
@@ -205,11 +221,11 @@ ScreenManager:
         text: root.name
         multiline: False
         size_hint_y: None
-        height: "38dp"
+        height: wheight
     Label:
         text: root.value
         size_hint_y: None
-        height: "38dp"
+        height: wheight
         text_size: self.size
         shorten: True
 
@@ -225,7 +241,7 @@ ScreenManager:
     RecycleView:
         data:
             [
-            {"index": i, "name": item["name"], "value": item["value"]}
+            {"index": i, "key": item["key"], "value": item["value"]}
             for i, item in 
             enumerate((app.target_entry or {}).get('text_fields', []))
             ]
@@ -244,13 +260,15 @@ ScreenManager:
         
 <AppButton@Button>:
     size_hint_y: None
-    height: "40dp"
+    height: wheight
 
 <CancelButton@AppButton>:
     text: "cancel"
+    height: Wheight
 
 <SaveButton@AppButton>:
     text: "save"
+    height: Wheight
 
 
 <ZoomImagePopup@Popup>:
@@ -265,7 +283,7 @@ ScreenManager:
                     size: self.texture_size
         Button:
             size_hint_y: None
-            height: "40dp"
+            height: wheight
             text: "close"
             on_release: root.dismiss()
 

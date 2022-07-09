@@ -1,3 +1,4 @@
+# vim: number nowrap
 from pathlib import Path
 from uuid import uuid4
 import logging
@@ -14,6 +15,8 @@ from zbarcam.zbarcam import ZBarCam
 
 from db import get_engine, save_entry, get_entry, get_entries
 
+import settings
+
 resource_add_path("./xcamera/")
 
 logging.basicConfig()
@@ -26,19 +29,22 @@ class EntryRow(F.ButtonBehavior, F.BoxLayout):
 
 class TextFieldEditPopup(F.Popup):
     index = F.NumericProperty(allownone=True)
-    name = F.StringProperty()
+    key = F.StringProperty()
     value = F.StringProperty()
 
 
-class Application(App):
+#
+# Kivy Application
+#
+class mTag:
     target_entry = F.DictProperty()
     entries = F.ListProperty()
 
     def __init__(self):
         super().__init__()
-        self.db = get_engine(Path(self.user_data_dir) / 'data.sqlite3')
+        self.db = get_engine(Path(self.user_data_dir) / sqldb)
         self.load_entries()
-        Path(self.user_data_dir, 'pictures').mkdir(parents=True, exist_ok=True)
+        Path(self.user_data_dir, settings.bindir).mkdir(parents=True, exist_ok=True)
 
     def load_entries(self):
         self.entries = get_entries(self.db)
@@ -54,18 +60,45 @@ class Application(App):
             id = str(uuid4())
             Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
 
+    @staticmethod
+    def sanitize(image_name):
+        for u in settings.strprefix:
+            image_name.lstrp(u)
+        if image_name.startswith('http'):
+            parsed = urlparse(image_name)
+            return f"{parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query.quote()}"
+        else:
+            return image_name.replace('/', '_')
+    
     def picture_for(self, target_id):
         return str(
             Path(
                 self.user_data_dir,
-                "pictures",
-                target_id or ""
+                settings.bindir,
+                self.sanitize(target_id) if target_id else '_'
+            ).with_suffix(".jpeg")
+        )
+
+    def thumbnail_for(self, target_id):
+        return str(
+            Path(
+                self.user_data_dir,
+                settings.thumbdir,
+                self.sanitize(target_id) if target_id else '_'
             ).with_suffix(".jpeg")
         )
 
     @mainthread
     def save_picture(self, camera, filename):
         rename(filename, self.picture_for(self.target_entry["id"]))
+
+        # thumbnail generation
+        from PIL import Image
+        im = Image.open(filename)
+        im = im.resize(settings.thumbsize)
+        im.save(filename.replace(bindir,thumbdir))
+        im.close()
+
         self.root.get_screen("editor").ids.picture.reload()
 
     def snap_picture(self):
@@ -81,7 +114,7 @@ class Application(App):
         data = self.target_entry["text_fields"][index] if index is not None else {}
         p = F.TextFieldEditPopup(
             index=index,
-            name=data.get("name", ""),
+            key=data.get("key", ""),
             value=data.get("value", ""),
         )
         p.open()
@@ -91,8 +124,8 @@ class Application(App):
         self.load_entries()
         self.switch_screen("entries")
 
-    def save_text_field(self, index=None, name="", value=""):
-        data = {"name": name, "value": value}
+    def save_text_field(self, index=None, key="", value=""):
+        data = {"key": key, "value": value}
         text_fields = self.target_entry["text_fields"][:]
         if index is not None:
             text_fields[index] = data
