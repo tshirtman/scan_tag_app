@@ -3,6 +3,9 @@ from pathlib import Path
 from uuid import uuid4
 import logging
 from os import rename
+from os.path import join
+from zipfile import ZipFile
+from datetime import datetime
 
 from kivy.utils import platform
 from kivy.app import App
@@ -42,8 +45,20 @@ class Application(App):
         super().__init__()
         self.db = get_engine(Path(self.user_data_dir) / settings.sqldb)
         self.load_entries()
-        Path(self.user_data_dir, settings.bindir).mkdir(parents=True, exist_ok=True)
+        #Path(self.user_data_dir, settings.bindir).mkdir(parents=True, exist_ok=True)
         Path(self.user_data_dir, settings.thumbdir).mkdir(parents=True, exist_ok=True)
+        #self.db = get_engine(Path(self.user_data_dir) / 'data.sqlite3')
+        self.db = get_engine(self.db_path)
+        #Path(self.user_data_dir, 'pictures').mkdir(parents=True, exist_ok=True)
+        self.pictures_path.mkdir(parents=True, exist_ok=True)
+
+    @property
+    def db_path(self) -> Path:
+        return Path(self.user_data_dir) / settings.sqldb
+ 
+    @property
+    def pictures_path(self) -> Path:
+        return Path(self.user_data_dir, settings.bindir)
 
     def load_entries(self):
         self.entries = get_entries(self.db)
@@ -71,6 +86,28 @@ class Application(App):
             return f"{parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query.quote()}"
         else:
             return image_name.replace('/', '_')
+
+    def export_db(self, *args):
+        """ TODO this should not exist """
+        if platform == 'android':
+            from androidstorage4kivy import SharedStorage, ShareSheet
+            from androidstorage4kivy.sharedstorage import MediaStoreDownloads
+            from android.permissions import Permission, request_permissions
+
+            ss = SharedStorage()
+            zip_file = Path(ss.get_cache_dir(), f'export-{datetime.now().isoformat()}.zip')
+            with ZipFile(zip_file, mode="w") as zf:
+                zf.write(self.db_path)
+                for picture in self.pictures_path.rglob('*.jpeg'):
+                    zf.write(picture)
+                print(", ".join(zf.namelist()))
+
+            print(f"export complete: {zip_file} {zip_file.exists()}")
+            shared_path = ss.copy_to_shared(zip_file.as_uri())
+            print("before sharing")
+            # request_permissions([Permission.WRITE_EXTERNAL_STORAGE])
+            ShareSheet().share_file_list([shared_path])
+            print("after sharing")
 
 
     def picture_for(self, target_id, thumbnail = False):

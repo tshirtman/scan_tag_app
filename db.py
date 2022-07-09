@@ -70,7 +70,7 @@ def _to_dict(entry: Entry, full=False):
 @to_dict.register
 def _to_dict(text_field: TextField):
     return {
-        'name': text_field.name,
+        'key': text_field.name,
         'value': text_field.value,
     }
 
@@ -128,7 +128,7 @@ def save_entry(engine, data):
             updated=datetime.now(),
         )
         existing_fields = {field.name for field in entry.fields}
-        update_fields = {field['name'] for field in data['text_fields']}
+        update_fields = {field['key'] for field in data['text_fields']}
 
         to_create = update_fields - existing_fields
         to_delete = existing_fields - update_fields
@@ -144,17 +144,17 @@ def save_entry(engine, data):
         )
 
         session.add_all([
-            TextField(name=item["name"], value=item["value"], entry=entry)
-            for item in data['text_fields'] if item["name"] in to_create
+            TextField(name=item["key"], value=item["value"], entry=entry)
+            for item in data['text_fields'] if item["key"] in to_create
         ])
 
         for field in data["text_fields"]:
-            if field["name"] not in to_update:
+            if field["key"] not in to_update:
                 continue
             session.execute(
                 update(TextField)
                 .where(
-                    (TextField.name == field["name"])
+                    (TextField.name == field["key"])
                     & (TextField.entry_id == data["id"])
                 )
                 .values(value=field["value"])

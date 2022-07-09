@@ -1,13 +1,13 @@
 [app]
 
 # (str) Title of your application
-title = scan_and_tag
+title = mTag
 
 # (str) Package name
-package.name = scan_and_tag
+package.name = meta_tagger
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = dev.tshirtman
+package.domain = dev.engrenage
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -47,6 +47,7 @@ requirements =
     python3==3.8.1,
     pyzbar==0.1.8,
     xcamera==2020.613,
+    androidstorage4kivy,
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -103,7 +104,7 @@ fullscreen = 0
 #icon.adaptive_background.filename = %(source.dir)s/data/icon_bg.png
 
 # (list) Permissions
-android.permissions = CAMERA
+android.permissions = CAMERA, WRITE_EXTERNAL_STORAGE
 
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host
@@ -307,7 +308,7 @@ android.allow_backup = True
 #p4a.fork = kivy
 
 # (str) python-for-android branch to use, defaults to master
-p4a.branch = develop
+p4a.branch = master
 
 # (str) python-for-android specific commit to use, defaults to HEAD, must be within p4a.branch
 #p4a.commit = HEAD
