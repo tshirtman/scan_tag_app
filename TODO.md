@@ -1,0 +1,3 @@
+- Complete platform support for all features
+- Engine and Dictionnary support
+- Rune support

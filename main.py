@@ -49,9 +49,6 @@ class mTag(App):
 
     def __init__(self):
         super().__init__()
-        if platform == 'android':
-            from androidstorage4kivy import SharedStorage
-            self.ss = SharedStorage()
         self.db = get_engine(self.db_path)
         self.load_entries()
         self.pictures_path.mkdir(parents=True, exist_ok=True)
@@ -61,24 +58,15 @@ class mTag(App):
 
     @property
     def db_path(self) -> Path:
-        if platform == 'android':
-            return Path(self.ss.get_cache_dir(), settings.sqldb)
-        else:
-            return Path(self.user_data_dir, settings.sqldb)
+        return Path(self.user_data_dir, settings.sqldb)
  
     @property
     def pictures_path(self) -> Path:
-        if platform == 'android':
-            return Path(self.ss.get_cache_dir(), settings.bindir)
-        else:
-            return Path(self.user_data_dir, settings.bindir)
+        return Path(self.user_data_dir, settings.bindir)
 
     @property
     def thumbnails_path(self) -> Path:
-        if platform == 'android':
-            return Path(self.ss.get_cache_dir(), settings.thumbdir)
-        else:
-            return Path(self.user_data_dir, settings.thumbdir)
+        return Path(self.user_data_dir, settings.thumbdir)
 
     def load_entries(self):
         self.entries = get_entries(self.db)
@@ -112,12 +100,12 @@ class mTag(App):
     def export_db(self, *args, button):
         """ TODO this should not exist ; not in this form at least """
         if platform == 'android':
-            from androidstorage4kivy import ShareSheet
+            from androidstorage4kivy import SharedStorage, ShareSheet
             from androidstorage4kivy.sharedstorage import MediaStoreDownloads
             from android.permissions import Permission, request_permissions
 
-            #ss = SharedStorage()
-            zip_file = Path(self.ss.get_cache_dir(), f'export-{datetime.now().isoformat()}.zip')
+            ss = SharedStorage()
+            zip_file = Path(ss.get_cache_dir(), f'export-{datetime.now().isoformat()}.zip')
             with ZipFile(zip_file, mode="w") as zf:
                 zf.write(self.db_path)
                 for picture in self.pictures_path.rglob('*.jpeg'):
@@ -125,7 +113,7 @@ class mTag(App):
                 #print(", ".join(zf.namelist()))
 
             print(f"export complete: {zip_file} {zip_file.exists()}")
-            shared_path = self.ss.copy_to_shared(zip_file.as_uri())
+            shared_path = ss.copy_to_shared(zip_file.as_uri())
             #print("before sharing")
             # request_permissions([Permission.WRITE_EXTERNAL_STORAGE])
             ShareSheet().share_file_list([shared_path])
@@ -151,7 +139,6 @@ class mTag(App):
             file_sel = Chooser()
         else:
             print("File chooser not implemented on this platform")
-            
 
     def picture_for(self, target_id, thumbnail = False):
         #print('TARGET',target_id)
