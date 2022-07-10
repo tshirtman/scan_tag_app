@@ -186,7 +186,7 @@ ScreenManager:
     text: app.user_data_dir
     size_hint_y: None
     height: wheight
-    on_release: app.export_db()
+    on_release: app.export_db( button = self )
 
 <EditPictureButton@Button>:
     text: 'edit photo'

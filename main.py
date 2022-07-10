@@ -98,8 +98,8 @@ class mTag(App):
         #    print('%%%',image_name.replace('/', '_'))
             return image_name.replace('/', '_')
 
-    def export_db(self, *args):
-        """ TODO this should not exist """
+    def export_db(self, *args, button):
+        """ TODO this should not exist ; not in this form at least """
         if platform == 'android':
             from androidstorage4kivy import SharedStorage, ShareSheet
             from androidstorage4kivy.sharedstorage import MediaStoreDownloads
@@ -111,32 +111,44 @@ class mTag(App):
                 zf.write(self.db_path)
                 for picture in self.pictures_path.rglob('*.jpeg'):
                     zf.write(picture)
-                print(", ".join(zf.namelist()))
+                #print(", ".join(zf.namelist()))
 
             print(f"export complete: {zip_file} {zip_file.exists()}")
             shared_path = ss.copy_to_shared(zip_file.as_uri())
-            print("before sharing")
+            #print("before sharing")
             # request_permissions([Permission.WRITE_EXTERNAL_STORAGE])
             ShareSheet().share_file_list([shared_path])
-            print("after sharing")
+            #print("after sharing")
+            button.background_color = (0,1,0)
+        else:
+            print("Error: platform support uncomplete")
+            button.background_color = (.2,.2,.2)
 
 
     def picture_for(self, target_id, thumbnail = False):
         #print('TARGET',target_id)
         if THUMBNAILS and thumbnail:
+            path = Path(
+                self.user_data_dir,
+                settings.thumbdir,
+                target_id or '_'
+            ).with_suffix(".jpeg")
+        else:
+            path = Path(
+                self.user_data_dir,
+                settings.bindir,
+                target_id or '_'
+            ).with_suffix(".jpeg")
+
+        if path.exists():
+            return str(path)
+        else:
+            # TODO this file doesn't exist by default... manual copy needed at this stage ; ideally it's compiled in-app
             return str(
                 Path(
                     self.user_data_dir,
                     settings.thumbdir,
-                    target_id or '_'
-                ).with_suffix(".jpeg")
-            )
-        else:
-            return str(
-                Path(
-                    self.user_data_dir,
-                    settings.bindir,
-                    target_id or '_'
+                    '_'
                 ).with_suffix(".jpeg")
             )
 
