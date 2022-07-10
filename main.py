@@ -108,15 +108,20 @@ class mTag(App):
             #print("before sharing")
             ShareSheet().share_file(shared_path)
             #print("after sharing")
-            button.text = str(zip_file)[:40]+'\n'+str(zip_file)[40:]
+            #button.text = str(zip_file)[:40]+'\n'+str(zip_file)[40:]
             button.background_color = (0,1,0)
 
-            #for picture in self.pictures_path.rglob('*.jpeg'):
-                # TODO delete picture
-            # TODO replace self.db_path with empty sqlite file
+            for picture in self.pictures_path.rglob('*.jpeg'):
+                Path(picture).unlink()
+            Path(self.db_path).unlink()
+            self.db = get_engine(self.db_path)
+
+            button.background_color = None
         else:
             print("Error: platform support uncomplete")
             print(self.db_path)
+            #Path(self.db_path).unlink()
+            #self.db = get_engine(self.db_path)
             print(self.pictures_path)
             button.background_color = (.2,.2,.2)
 
@@ -195,6 +200,17 @@ class mTag(App):
         text_fields = self.target_entry["text_fields"][:]
         text_fields.pop(index)
         self.target_entry["text_fields"] = text_fields
+
+    def preset_value(self, field):
+        # TODO open a popup with a list, populated from sqlite
+        if field.text == '':
+            field.text = '_label'
+        elif field.text == '_label':
+            field.text = 'Serial n°'
+        elif field.text == 'Serial n°':
+            field.text = 'Brand'
+        else:
+            field.text = ''
 
 if __name__ == '__main__':
     mTag().run()

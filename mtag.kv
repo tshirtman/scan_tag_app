@@ -1,9 +1,7 @@
 # vim: et ts=4 number nowrap
 #:import Path pathlib.Path
 #:import datetime datetime.datetime
-#:import A kivy.animation.Animation
 #:import is_android zbarcam.utils.is_android
-#:import F kivy.factory.Factory
 #:import wheight settings.wheight
 #:import Wheight settings.Wheight
 #:import NoTransition kivy.uix.screenmanager.NoTransition
@@ -15,6 +13,9 @@ ScreenManager:
     EntriesScreen:
     EntryEditor:
 
+<AppButton@Button>:
+    size_hint_y: None
+    height: wheight
 
 <ZBarCamPopup@Popup>:
     BoxLayout:
@@ -32,7 +33,7 @@ ScreenManager:
                 default_size: 0, wheight
 
 
-<ZBarSelectButton@Button>:
+<ZBarSelectButton@AppButton>:
     popup: None
     on_release:
         self.popup.ids.zbarcam.play = False
@@ -128,8 +129,8 @@ ScreenManager:
             size_hint_y: None
             CancelButton:
                 on_release: root.dismiss()
-            AddAnotherButton:
-                # on_release:     # TODO save this value and reopen this dialog
+            #AddAnotherButton:
+            #    on_release:     # TODO save this value and reopen this dialog
             SaveButton:
                 on_release:
                     app.save_text_field(root.index, ti_key.text, ti_value.text)
@@ -144,11 +145,12 @@ ScreenManager:
                 size_hint: 2, None
                 height: Wheight
                 # on_release: TODO select from list
-            Button:
-                size_hint_y: None
-                height: Wheight
-                text: 'QR'
-                #on_release: app.scan_input(ti_key)
+                on_release: app.preset_value(ti_key)
+            #Button:
+            #    size_hint_y: None
+            #    height: Wheight
+            #    text: 'QR'
+            #    on_release: app.scan_input(ti_key)
         TextInput:
             size_hint_y: None
             id: ti_key
@@ -158,32 +160,49 @@ ScreenManager:
         BoxLayout:
             size_hint_y: None
             height: Wheight
-            Button:
+            Label:
                 text: "value"
                 size_hint: 2, None
                 height: Wheight
                 # on_release: TODO select from list
-            Button:
-                text: 'QR'
-                size_hint_y: None
-                height: Wheight
-                #on_release: app.scan_input(ti_value)
+            #Button:
+            #    text: 'QR'
+            #    size_hint_y: None
+            #    height: Wheight
+            #    #on_release: app.scan_input(ti_value)
         TextInput:
             id: ti_value
             text: root.value
 
-<QRScanButton@Button>:
+<QRScanButton@AppButton>:
     text: 'scan new item'
-    size_hint_y: None
-    height: Wheight
     on_release: app.scan_id()
     background_color: (.99,.75,0.25,1)
 
-<DataExportButton@Button>:
+<DataExportButton@AppButton>:
     text: "export DB"
-    size_hint_y: None
-    height: wheight
     on_release: app.export_db( button = self )
+
+<CancelButton@AppButton>:
+    text: "cancel"
+    size_hint_x: 2
+    background_color: (1,0,0,1)
+
+<SaveButton@AppButton>:
+    text: "save"
+    size_hint_x: 2
+    background_color: (0,1,0,1)
+
+<AddAnotherButton@AppButton>:
+    text: 'save & add \nanother'
+    size_hint_x: 2
+    background_color: (0,1,1,1)
+
+<AddKeyVal@AppButton>:
+    text: "+➕+"
+    size_hint_x: 2
+    background_color: (0,1,1,1)
+    on_release: app.edit_text_field()
 
 <ExternalAppButton@Button>:
     text: 'app...'
@@ -210,54 +229,19 @@ ScreenManager:
     on_release: app.snap_picture()
     background_color: (0,0,1,1)
 
-#<AddButton@ButtonBehavior+Widget>:
 <AddButton@Button>:
     text: "+k/v"
     size_hint_x: 1
-    #size: Wheight, Wheight
-    #zoom: 1.0
-    #on_state:
-    #    A.cancel_all(self, 'zoom')
-    #    A(zoom=1.1 if self.state == 'down' else 1.0, d=.3, t='out_quad').start(self)
-
-    #canvas:
-    #    PushMatrix:
-    #    Scale:
-    #        xyz: [self.zoom] * 3
-    #        origin: self.center
-
-    #    Color:
-    #    Line:
-    #        width: dp(2)
-    #        ellipse: self.pos + self.size
-    #    Line:
-    #        width: dp(2)
-    #        points:
-    #            (
-    #            self.x + dp(10), self.center_y,
-    #            self.right - dp(10), self.center_y
-    #            )
-    #    Line:
-    #        width: dp(2)
-    #        points:
-    #            (
-    #            self.center_x, self.y + dp(10),
-    #            self.center_x, self.top - dp(10)
-    #            )
-    #    PopMatrix:
-
 
 <EditButton@Button>:
-    size_hint_y: None
+    size_hint: None, None
     size: wheight, wheight
     text: 'e'
 
-
 <DeleteButton@Button>:
-    size_hint_y: None
+    size_hint: None, None
     size: wheight, wheight
     text: 'x'
-
 
 <TextField@BoxLayout>:
     size_hint_y: None
@@ -285,7 +269,7 @@ ScreenManager:
 
 
 <EditableEntriesList@RelativeLayout>:
-    targe_id: None
+    target_id: None
 
     RecycleView:
         data:
@@ -302,31 +286,6 @@ ScreenManager:
             viewclass: 'TextField'
             default_size_hint: 1, None
             default_size: 0, wheight
-
-<AppButton@Button>:
-    size_hint_y: None
-    height: wheight
-
-<CancelButton@AppButton>:
-    text: "cancel"
-    size_hint_x: 2
-    background_color: (1,0,0,1)
-
-<SaveButton@AppButton>:
-    text: "save"
-    size_hint_x: 2
-    background_color: (0,1,0,1)
-
-<AddAnotherButton@AppButton>:
-    text: 'save & add \nanother'
-    size_hint_x: 2
-    background_color: (0,1,1,1)
-
-<AddKeyVal@AppButton>:
-    text: "+➕+"
-    size_hint_x: 2
-    background_color: (0,1,1,1)
-    on_release: app.edit_text_field()
 
 <ZoomImagePopup@Popup>:
     BoxLayout:
