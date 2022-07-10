@@ -6,6 +6,10 @@
 #:import F kivy.factory.Factory
 #:import wheight settings.wheight
 #:import Wheight settings.Wheight
+#:import NoTransition kivy.uix.screenmanager.NoTransition
+
+<ScreenManager>:
+	transition: NoTransition()
 
 ScreenManager:
     EntriesScreen:
@@ -188,6 +192,12 @@ ScreenManager:
     height: wheight
     on_release: app.export_db( button = self )
 
+<ExternalAppButton@Button>:
+    text: 'app...'
+    size_hint: 1, None
+    height: Wheight
+    on_release: app.call_app(self)
+
 <FileChooserButton@Button>:
     text: 'file...'
     size_hint: 1, None
@@ -198,10 +208,10 @@ ScreenManager:
     text: 'edit photo'
     size_hint: 1, None
     height: Wheight
-    # on_release: TODO see ShareSheet on https://github.com/Android-for-Python/androidstorage4kivy
+    on_release: print("Not implemented : edit/crop") #TODO see ShareSheet on https://github.com/Android-for-Python/androidstorage4kivy
 
 <PictureButton@Button>:
-    text: "📷"
+    text: "📷\nphoto"
     size_hint: 2, None
     height: Wheight
     on_release: app.snap_picture()
@@ -298,9 +308,9 @@ ScreenManager:
             viewclass: 'TextField'
             default_size_hint: 1, None
 
-    AddButton:
-        on_release: app.edit_text_field()
-        pos_hint: {'right': 1, 'y': 0}
+    #AddButton:
+    #    on_release: app.edit_text_field()
+    #    pos_hint: {'right': 1, 'y': 0}
         
         
 <AppButton@Button>:
@@ -315,6 +325,12 @@ ScreenManager:
     text: "save"
     size_hint_x: 2
     background_color: (0,1,0,1)
+
+<AddKeyVal@AppButton>:
+    text: "+➕+"
+    size_hint_x: 2
+    background_color: (0,1,1,1)
+    on_release: app.edit_text_field()
 
 
 <ZoomImagePopup@Popup>:
@@ -335,7 +351,8 @@ ScreenManager:
 
 
 <ZoomableImage@ButtonBehavior+Image>:
-    on_release: F.ZoomImagePopup().open()
+	# should open the camera when no photo exists.. 
+	on_release: app.snap_picture( force = False )
 
 
 <EntryEditor@Screen>:
@@ -354,6 +371,7 @@ ScreenManager:
         BoxLayout:
             size_hint_y: None
             height: Wheight
+			ExternalAppButton:
 			FileChooserButton:
             EditPictureButton:
                 # TODO
@@ -373,4 +391,5 @@ ScreenManager:
             CancelButton:
                 on_release: app.switch_screen("entries")
             SaveButton:
-                on_release: app.save()
+                on_release: app.save_entry()
+			AddKeyVal:

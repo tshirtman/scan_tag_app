@@ -139,9 +139,11 @@ class mTag(App):
         else:
             print("Error: platform support uncomplete")
             print(self.db_path)
-            print(self.ss.get_cache_dir())
+            print(self.pictures_path)
             button.background_color = (.2,.2,.2)
 
+    def call_app(self, button):
+        print("Not implemented : call_app()")
 
     def choose_file(self, button):
         if platform == 'android':
@@ -192,14 +194,24 @@ class mTag(App):
 
         self.root.get_screen("editor").ids.picture.reload()
 
-    def snap_picture(self):
+    def snap_picture(self, force = True):
+        ''' snaps a picture ; may be used to open a zoomable image if picture already exists '''
         target_id = self.target_entry["id"]
         if platform == 'android':
-            F.XCameraPopup().open()
+            if force:
+                # take new photo
+                F.XCameraPopup().open()
+            else:
+                # open zoomable image popup
+                F.ZoomImagePopup().open()
         else:
-            print("Error: platform supported for photo not implemented")
-        # TODO allow other platforms ; ie for linux
-        # https://github.com/ValentinDumas/KivyCam
+            if force:
+                # TODO allow other platforms ; ie for linux
+                # https://github.com/ValentinDumas/KivyCam
+                print("Error: platform support not implemented for photo")
+            else:
+                # open zoomable image popup
+                F.ZoomImagePopup().open()
 
     def edit_entry(self, entry_id):
         self.target_entry = get_entry(self.db, entry_id)
@@ -214,7 +226,7 @@ class mTag(App):
         )
         p.open()
 
-    def save(self):
+    def save_entry(self):
         save_entry(self.db, self.target_entry)
         self.load_entries()
         self.switch_screen("entries")
