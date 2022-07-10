@@ -188,14 +188,20 @@ ScreenManager:
     height: wheight
     on_release: app.export_db( button = self )
 
+<FileChooserButton@Button>:
+    text: 'file...'
+    size_hint: 1, None
+    height: Wheight
+    on_release: app.choose_file(self)
+
 <EditPictureButton@Button>:
     text: 'edit photo'
     size_hint: 1, None
     height: Wheight
-    # on_release: TODO
+    # on_release: TODO see ShareSheet on https://github.com/Android-for-Python/androidstorage4kivy
 
 <PictureButton@Button>:
-    text: 'change photo\n(camera)'
+    text: "📷"
     size_hint: 2, None
     height: Wheight
     on_release: app.snap_picture()
@@ -348,6 +354,7 @@ ScreenManager:
         BoxLayout:
             size_hint_y: None
             height: Wheight
+			FileChooserButton:
             EditPictureButton:
                 # TODO
             PictureButton:

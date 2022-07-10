@@ -62,21 +62,21 @@ class mTag(App):
     @property
     def db_path(self) -> Path:
         if platform == 'android':
-            return Path(self.ss, settings.sqldb)
+            return Path(self.ss.get_cache_dir(), settings.sqldb)
         else:
             return Path(self.user_data_dir, settings.sqldb)
  
     @property
     def pictures_path(self) -> Path:
         if platform == 'android':
-            return Path(self.ss, settings.bindir)
+            return Path(self.ss.get_cache_dir(), settings.bindir)
         else:
             return Path(self.user_data_dir, settings.bindir)
 
     @property
     def thumbnails_path(self) -> Path:
         if platform == 'android':
-            return Path(self.ss, settings.thumbdir)
+            return Path(self.ss.get_cache_dir(), settings.thumbdir)
         else:
             return Path(self.user_data_dir, settings.thumbdir)
 
@@ -130,7 +130,7 @@ class mTag(App):
             # request_permissions([Permission.WRITE_EXTERNAL_STORAGE])
             ShareSheet().share_file_list([shared_path])
             #print("after sharing")
-            button.text = str(zip_file)
+            button.text = str(zip_file)[:40]+'\n'+str(zip_file)[40:]
             button.background_color = (0,1,0)
 
             #for picture in self.pictures_path.rglob('*.jpeg'):
@@ -142,6 +142,14 @@ class mTag(App):
             print(self.ss.get_cache_dir())
             button.background_color = (.2,.2,.2)
 
+
+    def choose_file(self, button):
+        if platform == 'android':
+            from androidstorage4kivy import Chooser
+            file_sel = Chooser()
+        else:
+            print("File chooser not implemented on this platform")
+            
 
     def picture_for(self, target_id, thumbnail = False):
         #print('TARGET',target_id)

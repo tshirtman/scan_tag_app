@@ -11,6 +11,7 @@
    sodipodi:docname="logo.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -52,9 +53,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.9672138"
-     inkscape:cx="581.01644"
-     inkscape:cy="323.87285"
+     inkscape:zoom="0.52453425"
+     inkscape:cx="545.24562"
+     inkscape:cy="392.72936"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -1209,5 +1210,14 @@
          d="m 396.62122,318.8855 44.38235,-88.33998 44.16999,88.55234 -13.67873,0 -30.57923,-58.41918 -28.21,58.20682 z"
          style="fill:#808080;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
     </g>
+    <use
+       x="0"
+       y="0"
+       xlink:href="#g3483-9"
+       id="use491"
+       transform="matrix(2.0805285,0,0,2.0805285,-995.70705,-114.21241)"
+       inkscape:export-filename="../../../../../../tmp/logo.png"
+       inkscape:export-xdpi="103.97631"
+       inkscape:export-ydpi="103.97631" />
   </g>
 </svg>
