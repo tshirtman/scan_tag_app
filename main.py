@@ -14,6 +14,7 @@ from kivy.factory import Factory as F
 from kivy.clock import Clock, mainthread
 from kivy.resources import resource_add_path
 
+#gi.require_version('Gst', '1.0')   TODO must be done inside XCamera
 from xcamera.xcamera import XCamera
 from zbarcam.zbarcam import ZBarCam
 
@@ -22,7 +23,7 @@ import settings
 
 from urllib.parse import urlparse
 
-THUMBNAILS = True
+THUMBNAILS = False
 
 resource_add_path("./xcamera/")
 
@@ -48,6 +49,9 @@ class mTag(App):
 
     def __init__(self):
         super().__init__()
+        if platform == 'android':
+            from androidstorage4kivy import SharedStorage
+            self.ss = SharedStorage()
         self.db = get_engine(self.db_path)
         self.load_entries()
         self.pictures_path.mkdir(parents=True, exist_ok=True)
@@ -57,15 +61,24 @@ class mTag(App):
 
     @property
     def db_path(self) -> Path:
-        return Path(self.user_data_dir, settings.sqldb)
+        if platform == 'android':
+            return Path(self.ss, settings.sqldb)
+        else:
+            return Path(self.user_data_dir, settings.sqldb)
  
     @property
     def pictures_path(self) -> Path:
-        return Path(self.user_data_dir, settings.bindir)
+        if platform == 'android':
+            return Path(self.ss, settings.bindir)
+        else:
+            return Path(self.user_data_dir, settings.bindir)
 
     @property
     def thumbnails_path(self) -> Path:
-        return Path(self.user_data_dir, settings.thumbdir)
+        if platform == 'android':
+            return Path(self.ss, settings.thumbdir)
+        else:
+            return Path(self.user_data_dir, settings.thumbdir)
 
     def load_entries(self):
         self.entries = get_entries(self.db)
@@ -90,24 +103,21 @@ class mTag(App):
     def sanitize(image_name):
         for u in settings.strprefix:
             image_name = image_name.lstrip(u)
-        #print('###',image_name)
         if image_name.startswith('http'):
             parsed = urlparse(image_name)
-            #print( f">>> {parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query}" )
             return f"{parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query}"
         else:
-        #    print('%%%',image_name.replace('/', '_'))
             return image_name.replace('/', '_')
 
     def export_db(self, *args, button):
         """ TODO this should not exist ; not in this form at least """
         if platform == 'android':
-            from androidstorage4kivy import SharedStorage, ShareSheet
+            from androidstorage4kivy import ShareSheet
             from androidstorage4kivy.sharedstorage import MediaStoreDownloads
             from android.permissions import Permission, request_permissions
 
-            ss = SharedStorage()
-            zip_file = Path(ss.get_cache_dir(), f'export-{datetime.now().isoformat()}.zip')
+            #ss = SharedStorage()
+            zip_file = Path(self.ss.get_cache_dir(), f'export-{datetime.now().isoformat()}.zip')
             with ZipFile(zip_file, mode="w") as zf:
                 zf.write(self.db_path)
                 for picture in self.pictures_path.rglob('*.jpeg'):
@@ -115,15 +125,21 @@ class mTag(App):
                 #print(", ".join(zf.namelist()))
 
             print(f"export complete: {zip_file} {zip_file.exists()}")
-            shared_path = ss.copy_to_shared(zip_file.as_uri())
+            shared_path = self.ss.copy_to_shared(zip_file.as_uri())
             #print("before sharing")
             # request_permissions([Permission.WRITE_EXTERNAL_STORAGE])
             ShareSheet().share_file_list([shared_path])
             #print("after sharing")
             button.text = str(zip_file)
             button.background_color = (0,1,0)
+
+            #for picture in self.pictures_path.rglob('*.jpeg'):
+                # TODO delete picture
+            # TODO replace self.db_path with empty sqlite file
         else:
             print("Error: platform support uncomplete")
+            print(self.db_path)
+            print(self.ss.get_cache_dir())
             button.background_color = (.2,.2,.2)
 
 
