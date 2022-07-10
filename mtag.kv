@@ -25,7 +25,7 @@ ScreenManager:
             viewclass: "ZBarSelectButton"
             data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
             RecycleBoxLayout:
-	    	orientation: 'vertical'
+                orientation: 'vertical'
                 size_hint_y: None
                 height: self.minimum_height
                 default_size_hint: 1, None
