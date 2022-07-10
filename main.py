@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # vim: ts=4 number nowrap
 from pathlib import Path
 from uuid import uuid4

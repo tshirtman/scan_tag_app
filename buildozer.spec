@@ -40,15 +40,14 @@ version = 0.1
 requirements =
     android,
     python3,
+    python3==3.8.1,
     kivy,
     libzbar,
+    pyzbar==0.1.8,
     sqlalchemy==1.4.39,
     Pillow,
-    python3==3.8.1,
-    pyzbar==0.1.8,
     xcamera==2020.613,
     androidstorage4kivy,
-    urllib,
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
