@@ -1,1 +1,0 @@
-../meta/dictionnary.py
