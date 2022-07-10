@@ -1,4 +1,4 @@
-# vim: ts=4 number nowrap
+# vim: et ts=4 number nowrap
 #:import Path pathlib.Path
 #:import datetime datetime.datetime
 #:import A kivy.animation.Animation
@@ -124,20 +124,13 @@ ScreenManager:
         orientation: "vertical"
 
         BoxLayout:
+            height: wheight
             size_hint_y: None
-            Button:
-                text: 'cancel'
+            CancelButton:
                 on_release: root.dismiss()
-                background_color: (1,0,0,1)
-            Button:
-                text: 'save & add \nanother'
-                #background_color: (0,1,0,1)
-                size_hint_x: 2
+            AddAnotherButton:
                 # on_release:     # TODO save this value and reopen this dialog
-            Button:
-                text: 'save'
-                background_color: (0,1,0,1)
-                size_hint_x: 2
+            SaveButton:
                 on_release:
                     app.save_text_field(root.index, ti_key.text, ti_value.text)
                     root.dismiss()
@@ -217,39 +210,41 @@ ScreenManager:
     on_release: app.snap_picture()
     background_color: (0,0,1,1)
 
-<AddButton@ButtonBehavior+Widget>:
-    size_hint: None, None
-    size: Wheight, Wheight
-    zoom: 1.0
-    on_state:
-        A.cancel_all(self, 'zoom')
-        A(zoom=1.1 if self.state == 'down' else 1.0, d=.3, t='out_quad').start(self)
+#<AddButton@ButtonBehavior+Widget>:
+<AddButton@Button>:
+    text: "+k/v"
+    size_hint_x: 1
+    #size: Wheight, Wheight
+    #zoom: 1.0
+    #on_state:
+    #    A.cancel_all(self, 'zoom')
+    #    A(zoom=1.1 if self.state == 'down' else 1.0, d=.3, t='out_quad').start(self)
 
-    canvas:
-        PushMatrix:
-        Scale:
-            xyz: [self.zoom] * 3
-            origin: self.center
+    #canvas:
+    #    PushMatrix:
+    #    Scale:
+    #        xyz: [self.zoom] * 3
+    #        origin: self.center
 
-        Color:
-        Line:
-            width: dp(2)
-            ellipse: self.pos + self.size
-        Line:
-            width: dp(2)
-            points:
-                (
-                self.x + dp(10), self.center_y,
-                self.right - dp(10), self.center_y
-                )
-        Line:
-            width: dp(2)
-            points:
-                (
-                self.center_x, self.y + dp(10),
-                self.center_x, self.top - dp(10)
-                )
-        PopMatrix:
+    #    Color:
+    #    Line:
+    #        width: dp(2)
+    #        ellipse: self.pos + self.size
+    #    Line:
+    #        width: dp(2)
+    #        points:
+    #            (
+    #            self.x + dp(10), self.center_y,
+    #            self.right - dp(10), self.center_y
+    #            )
+    #    Line:
+    #        width: dp(2)
+    #        points:
+    #            (
+    #            self.center_x, self.y + dp(10),
+    #            self.center_x, self.top - dp(10)
+    #            )
+    #    PopMatrix:
 
 
 <EditButton@Button>:
@@ -268,13 +263,14 @@ ScreenManager:
     size_hint_y: None
     height: self.minimum_height
     index: 0
-    name: ""
+    key: ""
     value: ""
     Label:
-        text: root.name
+        text: root.key
         multiline: False
         size_hint_y: None
         height: wheight
+        shorten: True
     Label:
         text: root.value
         size_hint_y: None
@@ -307,23 +303,24 @@ ScreenManager:
             default_size_hint: 1, None
             default_size: 0, wheight
 
-    #AddButton:
-    #    on_release: app.edit_text_field()
-    #    pos_hint: {'right': 1, 'y': 0}
-        
-        
 <AppButton@Button>:
     size_hint_y: None
     height: wheight
 
 <CancelButton@AppButton>:
     text: "cancel"
+    size_hint_x: 2
     background_color: (1,0,0,1)
 
 <SaveButton@AppButton>:
     text: "save"
     size_hint_x: 2
     background_color: (0,1,0,1)
+
+<AddAnotherButton@AppButton>:
+    text: 'save & add \nanother'
+    size_hint_x: 2
+    background_color: (0,1,1,1)
 
 <AddKeyVal@AppButton>:
     text: "+➕+"
@@ -391,3 +388,7 @@ ScreenManager:
                 on_release: app.switch_screen("entries")
             SaveButton:
                 on_release: app.save_entry()
+    	    AddButton:
+    	        on_release: app.edit_text_field()
+    	        #pos_hint: {'right': 1, 'y': 0}
+        
