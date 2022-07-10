@@ -48,7 +48,7 @@ requirements =
     pyzbar==0.1.8,
     xcamera==2020.613,
     androidstorage4kivy,
-    urllib.parse,
+    urllib,
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes

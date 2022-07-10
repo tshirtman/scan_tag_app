@@ -119,6 +119,7 @@ class mTag(App):
             # request_permissions([Permission.WRITE_EXTERNAL_STORAGE])
             ShareSheet().share_file_list([shared_path])
             #print("after sharing")
+            button.text = str(zip_file)
             button.background_color = (0,1,0)
         else:
             print("Error: platform support uncomplete")
