@@ -25,7 +25,7 @@ ScreenManager:
             viewclass: "ZBarSelectButton"
             data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
             RecycleBoxLayout:
-                orientation: "vertical"
+	    	orientation: 'vertical'
                 size_hint_y: None
                 height: self.minimum_height
                 default_size_hint: 1, None
@@ -100,13 +100,14 @@ ScreenManager:
                 height: self.minimum_height
                 default_size_hint: 1, None
                 default_size: 0, wheight
-        DataDirButton:
+        DataExportButton:
+
 
 <EntryRow>:
     id: ""
     on_release: app.edit_entry(self.id or "")
     Image:
-        source: app.picture_for(root.id, True)
+        source: app.picture_for(root.id, thumbnail = True)
         size_hint_x: None
         width: root.height
     Label:
@@ -177,7 +178,6 @@ ScreenManager:
         TextInput:
             id: ti_value
             text: root.value
-        
 
 <QRScanButton@Button>:
     text: 'scan new item'
@@ -186,8 +186,8 @@ ScreenManager:
     on_release: app.scan_id()
     background_color: (.99,.75,0.25,1)
 
-<DataDirButton@Button>:
-    text: app.user_data_dir
+<DataExportButton@Button>:
+    text: "export DB"
     size_hint_y: None
     height: wheight
     on_release: app.export_db( button = self )
@@ -254,14 +254,12 @@ ScreenManager:
 
 <EditButton@Button>:
     size_hint_y: None
-    #width: self.height
     size: wheight, wheight
     text: 'e'
 
 
 <DeleteButton@Button>:
     size_hint_y: None
-    #width: self.height
     size: wheight, wheight
     text: 'x'
 
@@ -270,10 +268,10 @@ ScreenManager:
     size_hint_y: None
     height: self.minimum_height
     index: 0
-    key: ""
+    name: ""
     value: ""
     Label:
-        text: root.key
+        text: root.name
         multiline: False
         size_hint_y: None
         height: wheight
@@ -307,6 +305,7 @@ ScreenManager:
             height: self.minimum_height
             viewclass: 'TextField'
             default_size_hint: 1, None
+            default_size: 0, wheight
 
     #AddButton:
     #    on_release: app.edit_text_field()
@@ -332,7 +331,6 @@ ScreenManager:
     background_color: (0,1,1,1)
     on_release: app.edit_text_field()
 
-
 <ZoomImagePopup@Popup>:
     BoxLayout:
         orientation: "vertical"
@@ -351,8 +349,8 @@ ScreenManager:
 
 
 <ZoomableImage@ButtonBehavior+Image>:
-	# should open the camera when no photo exists.. 
-	on_release: app.snap_picture( force = False )
+    # should open the camera when no photo exists.. 
+    on_release: app.snap_picture( force = False )
 
 
 <EntryEditor@Screen>:
@@ -378,6 +376,7 @@ ScreenManager:
             PictureButton:
                 take_picture: picture
 
+
         ZoomableImage:
             id: picture
             source: app.picture_for(root.item_id)
@@ -392,4 +391,3 @@ ScreenManager:
                 on_release: app.switch_screen("entries")
             SaveButton:
                 on_release: app.save_entry()
-			AddKeyVal:

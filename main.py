@@ -23,8 +23,6 @@ import settings
 
 from urllib.parse import urlparse
 
-THUMBNAILS = False
-
 resource_add_path("./xcamera/")
 
 logging.basicConfig()
@@ -52,21 +50,14 @@ class mTag(App):
         self.db = get_engine(self.db_path)
         self.load_entries()
         self.pictures_path.mkdir(parents=True, exist_ok=True)
-        if THUMBNAILS:
-            #Path(self.user_data_dir, settings.thumbdir).mkdir(parents=True, exist_ok=True)
-            self.thumbnails_path.mkdir(parents=True, exist_ok=True)
 
     @property
     def db_path(self) -> Path:
         return Path(self.user_data_dir, settings.sqldb)
- 
+
     @property
     def pictures_path(self) -> Path:
         return Path(self.user_data_dir, settings.bindir)
-
-    @property
-    def thumbnails_path(self) -> Path:
-        return Path(self.user_data_dir, settings.thumbdir)
 
     def load_entries(self):
         self.entries = get_entries(self.db)
@@ -113,10 +104,9 @@ class mTag(App):
                 #print(", ".join(zf.namelist()))
 
             print(f"export complete: {zip_file} {zip_file.exists()}")
-            shared_path = ss.copy_to_shared(zip_file.as_uri())
+            shared_path = ss.copy_to_shared(str(zip_file))
             #print("before sharing")
-            # request_permissions([Permission.WRITE_EXTERNAL_STORAGE])
-            ShareSheet().share_file_list([shared_path])
+            ShareSheet().share_file(shared_path)
             #print("after sharing")
             button.text = str(zip_file)[:40]+'\n'+str(zip_file)[40:]
             button.background_color = (0,1,0)
@@ -141,44 +131,17 @@ class mTag(App):
             print("File chooser not implemented on this platform")
 
     def picture_for(self, target_id, thumbnail = False):
-        #print('TARGET',target_id)
-        if THUMBNAILS and thumbnail:
-            path = Path(
-                self.user_data_dir,
-                settings.thumbdir,
-                target_id or '_'
-            ).with_suffix(".jpeg")
-        else:
-            path = Path(
+        return str(
+            Path(
                 self.user_data_dir,
                 settings.bindir,
-                target_id or '_'
+                target_id or "_"
             ).with_suffix(".jpeg")
-
-        if path.exists():
-            return str(path)
-        else:
-            # TODO this file doesn't exist by default... manual copy needed at this stage ; ideally it's compiled in-app
-            return str(
-                Path(
-                    self.user_data_dir,
-                    settings.thumbdir,
-                    '_'
-                ).with_suffix(".jpeg")
-            )
+        )
 
     @mainthread
     def save_picture(self, camera, filename):
         rename(filename, self.picture_for(self.target_entry["id"]))
-
-        if THUMBNAILS:
-            # thumbnail generation
-            from PIL import Image
-            im = Image.open(filename)
-            im = im.resize(settings.thumbsize)
-            im.save(filename.replace(bindir,thumbdir))
-            im.close()
-
         self.root.get_screen("editor").ids.picture.reload()
 
     def snap_picture(self, force = True):
