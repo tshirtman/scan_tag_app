@@ -33,7 +33,7 @@ ScreenManager:
     on_release:
         self.popup.ids.zbarcam.play = False
         self.popup.dismiss() if self.popup else None
-        app.edit_entry(self.text)
+        app.edit_entry(app.sanitize(self.text))
 
 
 <XCameraPopup@Popup>:

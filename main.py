@@ -19,7 +19,9 @@ from zbarcam.zbarcam import ZBarCam
 from db import get_engine, save_entry, get_entry, get_entries
 import settings
 
-THUMBNAILS = False
+from urllib.parse import urlparse
+
+THUMBNAILS = True
 
 resource_add_path("./xcamera/")
 
@@ -39,28 +41,30 @@ class TextFieldEditPopup(F.Popup):
 #
 # Kivy Application
 #
-class Application(App):
+class mTag(App):
     target_entry = F.DictProperty()
     entries = F.ListProperty()
 
     def __init__(self):
         super().__init__()
-        self.db = get_engine(Path(self.user_data_dir) / settings.sqldb)
-        self.load_entries()
-        #Path(self.user_data_dir, settings.bindir).mkdir(parents=True, exist_ok=True)
-        if THUMBNAILS: Path(self.user_data_dir, settings.thumbdir).mkdir(parents=True, exist_ok=True)
-        #self.db = get_engine(Path(self.user_data_dir) / 'data.sqlite3')
         self.db = get_engine(self.db_path)
-        #Path(self.user_data_dir, 'pictures').mkdir(parents=True, exist_ok=True)
+        self.load_entries()
         self.pictures_path.mkdir(parents=True, exist_ok=True)
+        if THUMBNAILS:
+            #Path(self.user_data_dir, settings.thumbdir).mkdir(parents=True, exist_ok=True)
+            self.thumbnails_path.mkdir(parents=True, exist_ok=True)
 
     @property
     def db_path(self) -> Path:
-        return Path(self.user_data_dir) / settings.sqldb
+        return Path(self.user_data_dir, settings.sqldb)
  
     @property
     def pictures_path(self) -> Path:
         return Path(self.user_data_dir, settings.bindir)
+
+    @property
+    def thumbnails_path(self) -> Path:
+        return Path(self.user_data_dir, settings.thumbdir)
 
     def load_entries(self):
         self.entries = get_entries(self.db)
@@ -73,7 +77,9 @@ class Application(App):
             F.ZBarCamPopup().open()
         else:
             # temporary hack to simulate scanning a code
+            # TODO allow webcam input or manual entry
             id = str(uuid4())
+            #id = self.sanitize('https://en.gren.ag/e?'+str(uuid4()))
             Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
 
     def scan_input(self, field):
@@ -82,11 +88,14 @@ class Application(App):
     @staticmethod
     def sanitize(image_name):
         for u in settings.strprefix:
-            image_name.lstrip(u)
+            image_name = image_name.lstrip(u)
+        #print('###',image_name)
         if image_name.startswith('http'):
             parsed = urlparse(image_name)
-            return f"{parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query.quote()}"
+            #print( f">>> {parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query}" )
+            return f"{parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query}"
         else:
+        #    print('%%%',image_name.replace('/', '_'))
             return image_name.replace('/', '_')
 
     def export_db(self, *args):
@@ -113,12 +122,13 @@ class Application(App):
 
 
     def picture_for(self, target_id, thumbnail = False):
+        #print('TARGET',target_id)
         if THUMBNAILS and thumbnail:
             return str(
                 Path(
                     self.user_data_dir,
                     settings.thumbdir,
-                    self.sanitize(target_id) if target_id else '_'
+                    target_id or '_'
                 ).with_suffix(".jpeg")
             )
         else:
@@ -126,12 +136,9 @@ class Application(App):
                 Path(
                     self.user_data_dir,
                     settings.bindir,
-                    self.sanitize(target_id) if target_id else '_'
+                    target_id or '_'
                 ).with_suffix(".jpeg")
             )
-
-    def user_dir_do_something(self):
-        pass
 
     @mainthread
     def save_picture(self, camera, filename):
@@ -151,6 +158,10 @@ class Application(App):
         target_id = self.target_entry["id"]
         if platform == 'android':
             F.XCameraPopup().open()
+        else:
+            print("Error: platform supported for photo not implemented")
+        # TODO allow other platforms ; ie for linux
+        # https://github.com/ValentinDumas/KivyCam
 
     def edit_entry(self, entry_id):
         self.target_entry = get_entry(self.db, entry_id)
@@ -186,4 +197,4 @@ class Application(App):
         self.target_entry["text_fields"] = text_fields
 
 if __name__ == '__main__':
-    Application().run()
+    mTag().run()
