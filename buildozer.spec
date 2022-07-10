@@ -49,7 +49,6 @@ requirements =
     xcamera==2020.613,
     androidstorage4kivy,
     urllib.parse,
-    PIL,
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
