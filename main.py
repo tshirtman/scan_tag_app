@@ -68,6 +68,8 @@ class mTag(App):
         self.entries = get_entries(self.db)
 
     def switch_screen(self, target):
+        if target == 'entries':
+            self.load_entries()
         self.root.current = target
 
     def scan_id(self):
@@ -78,19 +80,21 @@ class mTag(App):
             # TODO allow webcam input or manual entry
             id = str(uuid4())
             Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
+        print('EDITING:',self.target_entry['id']) # TODO this is the _previous_ id!
+        #self.target_entry = get_entry(self.db, entry_id)
 
     def scan_input(self, field):
         """ TODO set text input field to content of next QR code (open popup) ; set focus to next input field """
 
     @staticmethod
-    def sanitize(image_name):
+    def sanitize(qrcontent):
         for u in settings.strprefix:
-            image_name = image_name.lstrip(u)
-        if image_name.startswith('http'):
-            parsed = urlparse(image_name)
+            qrcontent = qrcontent.lstrip(u)
+        if qrcontent.startswith('http'):
+            parsed = urlparse(qrcontent)
             return f"{parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query}"
         else:
-            return image_name.replace('/', '_')
+            return qrcontent.replace('/', '_')
 
     def export_db(self, *args, button):
         """ TODO this should not exist ; not in this form at least """
@@ -204,9 +208,8 @@ class mTag(App):
         p.open()
 
     def save_entry(self):
-        # this saves everything agai.. kept because of key+val pairs deletion
+        # this saves everything again.. kept because of key+val pairs deletion
         save_entry(self.db, self.target_entry)
-        self.load_entries()
         self.switch_screen("entries")
 
     def save_text_field(self, index=None, key="", value=""):

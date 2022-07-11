@@ -140,7 +140,7 @@ ScreenManager:
             SaveButton:
                 text: "save + scan"
                 on_release:
-                    app.save_text_field(root.index, ti_key.text, ti_value.text)
+                    app.save_text_field(root.index, ti_key.text, ti_value.text) if ti_value.text != '' else None
                     root.dismiss()
                     # scan new item
                     app.scan_id()
@@ -352,7 +352,8 @@ ScreenManager:
             size_hint_y: None
             height: self.minimum_height
             CancelButton:
-                on_release: app.switch_screen("entries")
+                on_release:
+                    app.switch_screen("entries")
                 text: "back to list"
                 background_color: (.5,.5,.5)
             SaveButton:
