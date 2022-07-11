@@ -38,7 +38,8 @@ ScreenManager:
     on_release:
         self.popup.ids.zbarcam.play = False
         self.popup.dismiss() if self.popup else None
-        app.edit_entry(app.sanitize(self.text))
+        app.target_uuid = app.sanitize(self.text)
+        app.edit_entry()
 
 
 <XCameraPopup@Popup>:
@@ -108,7 +109,10 @@ ScreenManager:
 
 <EntryRow>:
     id: ""
-    on_release: app.edit_entry(self.id or "")
+    on_release:
+        print('EDITING ID:' , self.id)
+        app.target_uuid = self.id
+        app.edit_entry()
     Image:
         source: app.picture_for(root.id, thumbnail = True)
         size_hint_x: None
@@ -191,6 +195,11 @@ ScreenManager:
     text: "export DB"
     on_release: app.export_db( button = self )
 
+<DeleteEntryButton@AppButton>:
+    text: "delete"
+    background_color: (.2,.2,.2,1)
+
+<SaveButton@AppButton>:
 <CancelButton@AppButton>:
     text: "cancel"
     size_hint_x: 2
@@ -351,6 +360,7 @@ ScreenManager:
             spacing: "10dp"
             size_hint_y: None
             height: self.minimum_height
+            DeleteEntryButton:
             CancelButton:
                 on_release:
                     app.switch_screen("entries")

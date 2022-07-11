@@ -79,12 +79,15 @@ class mTag(App):
             # temporary hack to simulate scanning a code
             # TODO allow webcam input or manual entry
             id = str(uuid4())
-            Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
+            Clock.schedule_once(lambda *_: self.edit_entry(), 2)
         print('EDITED:',self.target_entry['id'], '(previous value ; this is WRONG!)') # TODO this is the _previous_ id!
         #self.target_entry = get_entry(self.db, entry_id)
 
     def scan_input(self, field):
         """ TODO set text input field to content of next QR code (open popup) ; set focus to next input field """
+
+    def delete_entry(self):
+        print(self.target_entry)
 
     @staticmethod
     def sanitize(qrcontent):
@@ -195,8 +198,9 @@ class mTag(App):
                 # open zoomable image popup
                 F.ZoomImagePopup().open()
 
-    def edit_entry(self, entry_id):
-        self.target_entry = get_entry(self.db, entry_id)
+    def edit_entry(self):
+        self.target_entry = get_entry(self.db, self.target_uuid)
+        print("EDIT:",self.target_entry['id'])
         self.switch_screen("editor")
 
     def edit_text_field(self, index=None):
