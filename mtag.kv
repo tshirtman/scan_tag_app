@@ -102,6 +102,8 @@ ScreenManager:
                 default_size_hint: 1, None
                 default_size: 0, wheight
         DataExportButton:
+            size_hint_x: None
+            width: wheight
 
 
 <EntryRow>:
@@ -129,13 +131,19 @@ ScreenManager:
             size_hint_y: None
             CancelButton:
                 on_release: root.dismiss()
-            #AddAnotherButton:
-            #    on_release:     # TODO save this value and reopen this dialog
+            AddAnotherButton:
+                on_release:
+                    # save this value and reopen this dialog
+                    app.save_text_field(root.index, ti_key.text, ti_value.text)
+                    root.dismiss()
+                    app.edit_text_field()
             SaveButton:
+                text: "save + scan"
                 on_release:
                     app.save_text_field(root.index, ti_key.text, ti_value.text)
                     root.dismiss()
-                    # TODO scan new item
+                    # scan new item
+                    app.scan_id()
 
         BoxLayout:
             size_hint_y: None
@@ -194,7 +202,7 @@ ScreenManager:
     background_color: (0,1,0,1)
 
 <AddAnotherButton@AppButton>:
-    text: 'save & add \nanother'
+    text: '+k/v'
     size_hint_x: 2
     background_color: (0,1,1,1)
 
@@ -345,9 +353,10 @@ ScreenManager:
             height: self.minimum_height
             CancelButton:
                 on_release: app.switch_screen("entries")
+                text: "back to list"
+                background_color: (.5,.5,.5)
             SaveButton:
                 on_release: app.save_entry()
     	    AddButton:
     	        on_release: app.edit_text_field()
-    	        #pos_hint: {'right': 1, 'y': 0}
         

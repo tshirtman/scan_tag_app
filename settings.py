@@ -7,3 +7,13 @@ sqldb = 'data.sqlite3'
 strprefix = (
     'https://en.gren.ag/e?',
 )
+presetkeys = (
+    '_label',
+    'Brand',
+    'Model n°',
+    'Serial n°',
+    'Width',
+    'Length',
+    'Height',
+    'Weight',
+)

@@ -14,7 +14,7 @@ from kivy.factory import Factory as F
 from kivy.clock import Clock, mainthread
 from kivy.resources import resource_add_path
 
-#gi.require_version('Gst', '1.0')   TODO must be done inside XCamera
+#gi.require_version('Gst', '1.0')   TODO should be done inside XCamera, so as to avoid warning
 from xcamera.xcamera import XCamera
 from zbarcam.zbarcam import ZBarCam
 
@@ -50,6 +50,7 @@ class mTag(App):
         self.db = get_engine(self.db_path)
         self.load_entries()
         self.pictures_path.mkdir(parents=True, exist_ok=True)
+        self.thumbnails_path.mkdir(parents=True, exist_ok=True)
 
     @property
     def db_path(self) -> Path:
@@ -58,6 +59,10 @@ class mTag(App):
     @property
     def pictures_path(self) -> Path:
         return Path(self.user_data_dir, settings.bindir)
+
+    @property                    
+    def thumbnails_path(self) -> Path:
+        return Path(self.user_data_dir, settings.thumbdir)
 
     def load_entries(self):
         self.entries = get_entries(self.db)
@@ -72,7 +77,6 @@ class mTag(App):
             # temporary hack to simulate scanning a code
             # TODO allow webcam input or manual entry
             id = str(uuid4())
-            #id = self.sanitize('https://en.gren.ag/e?'+str(uuid4()))
             Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
 
     def scan_input(self, field):
@@ -101,27 +105,17 @@ class mTag(App):
                 zf.write(self.db_path)
                 for picture in self.pictures_path.rglob('*.jpeg'):
                     zf.write(picture)
-                #print(", ".join(zf.namelist()))
+                    Path(picture).unlink()
 
             print(f"export complete: {zip_file} {zip_file.exists()}")
             shared_path = ss.copy_to_shared(str(zip_file))
-            #print("before sharing")
             ShareSheet().share_file(shared_path)
-            #print("after sharing")
-            #button.text = str(zip_file)[:40]+'\n'+str(zip_file)[40:]
-            button.background_color = (0,1,0)
 
-            for picture in self.pictures_path.rglob('*.jpeg'):
-                Path(picture).unlink()
             Path(self.db_path).unlink()
             self.db = get_engine(self.db_path)
-
-            button.background_color = None
         else:
             print("Error: platform support uncomplete")
             print(self.db_path)
-            #Path(self.db_path).unlink()
-            #self.db = get_engine(self.db_path)
             print(self.pictures_path)
             button.background_color = (.2,.2,.2)
 
@@ -136,17 +130,45 @@ class mTag(App):
             print("File chooser not implemented on this platform")
 
     def picture_for(self, target_id, thumbnail = False):
-        return str(
-            Path(
+        #print('TARGET',target_id)
+        if thumbnail:
+            path = Path(
+                self.user_data_dir,
+                settings.thumbdir,
+                target_id or '_'
+            ).with_suffix(".jpeg")
+        else:
+            path = Path(
                 self.user_data_dir,
                 settings.bindir,
-                target_id or "_"
+                target_id or '_'
             ).with_suffix(".jpeg")
-        )
+    
+        if path.exists():
+            return str(path)
+        else:
+            # TODO this file doesn't exist by default... manual copy needed at this stage ; ideally it's compiled in-app
+            return str(
+                Path(
+                    self.user_data_dir,
+                    settings.thumbdir,
+                    '_'
+                ).with_suffix(".jpeg")
+            )
 
     @mainthread
     def save_picture(self, camera, filename):
         rename(filename, self.picture_for(self.target_entry["id"]))
+
+        if THUMBNAILS:
+            # thumbnail generation
+            from PIL import Image
+            im = Image.open(filename)
+            im = im.resize(settings.thumbsize)
+            im.save(filename.replace(bindir,thumbdir))
+            im.close()
+
+        # TODO what does it reload exactly? thumbnails or full-size photos?
         self.root.get_screen("editor").ids.picture.reload()
 
     def snap_picture(self, force = True):
@@ -182,6 +204,7 @@ class mTag(App):
         p.open()
 
     def save_entry(self):
+        # this saves everything agai.. kept because of key+val pairs deletion
         save_entry(self.db, self.target_entry)
         self.load_entries()
         self.switch_screen("entries")
@@ -195,6 +218,8 @@ class mTag(App):
             text_fields.append(data)
 
         self.target_entry["text_fields"] = text_fields
+        # this saves all key/value pairs... TODO save only the one we just edited!
+        save_entry(self.db, self.target_entry)
 
     def remove_text_field(self, index):
         text_fields = self.target_entry["text_fields"][:]
@@ -202,15 +227,16 @@ class mTag(App):
         self.target_entry["text_fields"] = text_fields
 
     def preset_value(self, field):
-        # TODO open a popup with a list, populated from sqlite
-        if field.text == '':
-            field.text = '_label'
-        elif field.text == '_label':
-            field.text = 'Serial n°'
-        elif field.text == 'Serial n°':
-            field.text = 'Brand'
-        else:
-            field.text = ''
+        # TODO open a popup with a list, populated from sqlite (with auto-add)
+        try:
+            i = settings.presetkeys.index(field.text)
+            if i == len(settings.presetkeys)-1:
+                field.text = settings.presetkeys[0]
+            else:
+                field.text = settings.presetkeys[i+1]
+        except ValueError:
+            # not in list
+            field.text = settings.presetkeys[0]
 
 if __name__ == '__main__':
     mTag().run()
