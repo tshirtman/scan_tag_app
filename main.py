@@ -80,7 +80,7 @@ class mTag(App):
             # TODO allow webcam input or manual entry
             id = str(uuid4())
             Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
-        print('EDITING:',self.target_entry['id']) # TODO this is the _previous_ id!
+        print('EDITED:',self.target_entry['id'], '(previous value ; this is WRONG!)') # TODO this is the _previous_ id!
         #self.target_entry = get_entry(self.db, entry_id)
 
     def scan_input(self, field):
@@ -134,7 +134,7 @@ class mTag(App):
             print("File chooser not implemented on this platform")
 
     def picture_for(self, target_id, thumbnail = False):
-        #print('TARGET',target_id)
+        print('PICTURE TARGET',target_id)
         if thumbnail:
             path = Path(
                 self.user_data_dir,
@@ -176,8 +176,9 @@ class mTag(App):
         self.root.get_screen("editor").ids.picture.reload()
 
     def snap_picture(self, force = True):
-        ''' snaps a picture ; may be used to open a zoomable image if picture already exists '''
+        ''' snaps a picture ; TODO may be used to open a zoomable image if picture already exists '''
         target_id = self.target_entry["id"]
+        print('OOPS?',target_id, 'this seems correct')
         if platform == 'android':
             if force:
                 # take new photo
