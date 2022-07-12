@@ -187,13 +187,12 @@ class mTag(App):
     def save_picture(self, camera, filename):
         rename(filename, self.picture_for(self.target_entry["id"]))
 
-        if THUMBNAILS:
-            # thumbnail generation
-            from PIL import Image
-            im = Image.open(filename)
-            im = im.resize(settings.thumbsize)
-            im.save(filename.replace(bindir,thumbdir))
-            im.close()
+        # thumbnail generation
+        from PIL import Image
+        im = Image.open(filename)
+        im = im.resize(settings.thumbsize)
+        im.save( str(filename).replace(settings.bindir,settings.thumbdir) )
+        im.close()
 
         # TODO what does it reload exactly? thumbnails or full-size photos?
         self.root.get_screen("editor").ids.picture.reload()
@@ -201,7 +200,7 @@ class mTag(App):
     def snap_picture(self, force = True):
         ''' snaps a picture ; TODO may be used to open a zoomable image if picture already exists '''
         target_id = self.target_entry["id"]
-        print('OOPS?',target_id, 'this seems correct')
+        #print('OOPS?',target_id, 'this seems correct')
         if platform == 'android':
             if force:
                 # take new photo
@@ -214,6 +213,11 @@ class mTag(App):
                 # TODO allow other platforms ; ie for linux
                 # https://github.com/ValentinDumas/KivyCam
                 print("Error: platform support not implemented for photo")
+                #print("Error: platform support not implemented for photo ; debugging only")
+                #from random import choice
+                #pic = Path(f'/home/meta/naspi/metameta/mtag/{choice([1,2,3])}.jpeg').read_bytes()
+                #Path(self.pictures_path / (target_id+'.jpeg')).write_bytes(pic)
+                #self.save_picture(None, self.pictures_path / (target_id+'.jpeg'))
             else:
                 # open zoomable image popup
                 F.ZoomImagePopup().open()
