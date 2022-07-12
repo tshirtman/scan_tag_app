@@ -143,6 +143,14 @@ class mTag(App):
             print("Error: platform support uncomplete")
             print(self.db_path)
             print(self.pictures_path)
+            zip_file = Path('/tmp', f'export-{datetime.now().isoformat()}.zip')
+            with ZipFile(zip_file, mode="w") as zf:
+                zf.write(self.db_path)
+                for picture in self.pictures_path.rglob('*.jpeg'):
+                    zf.write(picture)
+                    Path(picture).unlink()
+            Path(self.db_path).unlink()
+            self.db = get_engine(self.db_path)
             button.background_color = (.2,.2,.2)
         self.load_entries()
 
@@ -194,7 +202,7 @@ class mTag(App):
         im.save( str(filename).replace(settings.bindir,settings.thumbdir) )
         im.close()
 
-        # TODO what does it reload exactly? thumbnails or full-size photos?
+        self.root.get_screen("editor").ids.picture.source = self.picture_for(self.target_entry["id"])
         self.root.get_screen("editor").ids.picture.reload()
 
     def snap_picture(self, force = True):
@@ -214,10 +222,10 @@ class mTag(App):
                 # https://github.com/ValentinDumas/KivyCam
                 print("Error: platform support not implemented for photo")
                 #print("Error: platform support not implemented for photo ; debugging only")
-                #from random import choice
-                #pic = Path(f'/home/meta/naspi/metameta/mtag/{choice([1,2,3])}.jpeg').read_bytes()
-                #Path(self.pictures_path / (target_id+'.jpeg')).write_bytes(pic)
-                #self.save_picture(None, self.pictures_path / (target_id+'.jpeg'))
+                from random import choice
+                pic = Path(f'/home/meta/naspi/metameta/mtag/{choice([1,2,3])}.jpeg').read_bytes()
+                Path(self.pictures_path / (target_id+'.jpeg')).write_bytes(pic)
+                self.save_picture(None, self.pictures_path / (target_id+'.jpeg'))
             else:
                 # open zoomable image popup
                 F.ZoomImagePopup().open()
