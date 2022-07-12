@@ -23,6 +23,8 @@ import settings
 
 from urllib.parse import urlparse
 
+THUMBNAILS = False
+
 resource_add_path("./xcamera/")
 
 logging.basicConfig()
@@ -166,7 +168,7 @@ class mTag(App):
 
     def picture_for(self, target_id, thumbnail = False):
         #print('PICTURE TARGET',target_id, thumbnail)
-        if thumbnail:
+        if THUMBNAILS and thumbnail:
             path = Path(
                 self.user_data_dir,
                 settings.thumbdir,
@@ -179,28 +181,32 @@ class mTag(App):
                 target_id or '_'
             ).with_suffix(".jpeg")
 
-        if path.exists():
-            return str(path)
+        if THUMBNAILS:
+            if path.exists():
+                return str(path)
+            else:
+                # TODO this file doesn't exist by default... manual copy needed at this stage ; ideally it's compiled in-app
+                return str(
+                    Path(
+                        self.user_data_dir,
+                        settings.thumbdir,
+                        '_'
+                    ).with_suffix(".jpeg")
+                )
         else:
-            # TODO this file doesn't exist by default... manual copy needed at this stage ; ideally it's compiled in-app
-            return str(
-                Path(
-                    self.user_data_dir,
-                    settings.thumbdir,
-                    '_'
-                ).with_suffix(".jpeg")
-            )
+            return str(path)
 
     @mainthread
     def save_picture(self, camera, filename):
         rename(filename, self.picture_for(self.target_entry["id"]))
 
         # thumbnail generation
-        from PIL import Image
-        im = Image.open(filename)
-        im = im.resize(settings.thumbsize)
-        im.save( str(filename).replace(settings.bindir,settings.thumbdir) )
-        im.close()
+        if THUMBNAILS:
+            from PIL import Image
+            im = Image.open(filename)
+            im = im.resize(settings.thumbsize)
+            im.save( str(filename).replace(settings.bindir,settings.thumbdir) )
+            im.close()
 
         self.root.get_screen("editor").ids.picture.source = self.picture_for(self.target_entry["id"])
         self.root.get_screen("editor").ids.picture.reload()
