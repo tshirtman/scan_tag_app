@@ -32,14 +32,35 @@ ScreenManager:
                 default_size_hint: 1, None
                 default_size: 0, wheight
 
+<ZBarCamValuePopup@Popup>:
+    BoxLayout:
+        orientation: "vertical"
+        ZBarCam:
+            id: zbarcam
+        RecycleView:
+            viewclass: "ZBarSelectValueButton"
+            data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
+            RecycleBoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                default_size_hint: 1, None
+                default_size: 0, wheight
+
 
 <ZBarSelectButton@AppButton>:
     popup: None
     on_release:
         self.popup.ids.zbarcam.play = False
         self.popup.dismiss() if self.popup else None
-        app.target_uuid = app.sanitize(self.text)
-        app.edit_entry()
+        app.edit_entry(app.sanitize(self.text))
+
+<ZBarSelectValueButton@AppButton>:
+    popup: None
+    on_release:
+        self.popup.ids.zbarcam.play = False
+        self.popup.dismiss() if self.popup else None
+        app.value = app.sanitize(self.text)
 
 
 <XCameraPopup@Popup>:
@@ -110,9 +131,8 @@ ScreenManager:
 <EntryRow>:
     id: ""
     on_release:
-        print('EDITING ID:' , self.id)
-        app.target_uuid = self.id
-        app.edit_entry()
+        #print('EDITING ID:' , self.id)
+        app.edit_entry(self.id)
     Image:
         source: app.picture_for(root.id, thumbnail = True)
         size_hint_x: None
@@ -131,6 +151,7 @@ ScreenManager:
         orientation: "vertical"
 
         BoxLayout:
+            #spacing: "10dp"
             height: wheight
             size_hint_y: None
             CancelButton:
@@ -158,11 +179,8 @@ ScreenManager:
                 height: Wheight
                 # on_release: TODO select from list
                 on_release: app.preset_value(ti_key)
-            #Button:
-            #    size_hint_y: None
-            #    height: Wheight
-            #    text: 'QR'
-            #    on_release: app.scan_input(ti_key)
+            QRScanValueButton:
+                on_release: app.scan_value(ti_key)
         TextInput:
             size_hint_y: None
             id: ti_key
@@ -177,11 +195,8 @@ ScreenManager:
                 size_hint: 2, None
                 height: Wheight
                 # on_release: TODO select from list
-            #Button:
-            #    text: 'QR'
-            #    size_hint_y: None
-            #    height: Wheight
-            #    #on_release: app.scan_input(ti_value)
+            QRScanValueButton:
+                on_release: app.scan_value(ti_value)
         TextInput:
             id: ti_value
             text: root.value
@@ -191,13 +206,20 @@ ScreenManager:
     on_release: app.scan_id()
     background_color: (.99,.75,0.25,1)
 
+<QRScanValueButton@AppButton>:
+    text: 'QR'
+    size_hint_y: None
+    height: Wheight
+    background_color: (.99,.75,0.25,1)
+
 <DataExportButton@AppButton>:
     text: "export DB"
     on_release: app.export_db( button = self )
 
-<DeleteEntryButton@AppButton>:
-    text: "delete"
-    background_color: (.2,.2,.2,1)
+#<DeleteEntryButton@AppButton>:
+#    text: "delete"
+#    background_color: (.2,.2,.2,1)
+#    on_release: app.delete_entry()
 
 <SaveButton@AppButton>:
 <CancelButton@AppButton>:
@@ -357,10 +379,10 @@ ScreenManager:
         EditableEntriesList:
             entries: (app.target_entry).get("text_fields", [])
         BoxLayout:
-            spacing: "10dp"
+            #spacing: "10dp"
             size_hint_y: None
             height: self.minimum_height
-            DeleteEntryButton:
+            #DeleteEntryButton:
             CancelButton:
                 on_release:
                     app.switch_screen("entries")

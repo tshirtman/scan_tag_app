@@ -79,9 +79,28 @@ class mTag(App):
             # temporary hack to simulate scanning a code
             # TODO allow webcam input or manual entry
             id = str(uuid4())
-            Clock.schedule_once(lambda *_: self.edit_entry(), 2)
-        print('EDITED:',self.target_entry['id'], '(previous value ; this is WRONG!)') # TODO this is the _previous_ id!
+            Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
+        #print('EDITED:',self.target_entry['id'], '(previous value ; this is WRONG!)') # TODO this is the _previous_ id!
         #self.target_entry = get_entry(self.db, entry_id)
+
+    @property
+    def value(self):
+        return None
+
+    @value.setter
+    def value(self, value):
+        #self._value = value
+        self.qr_content_to.text = value
+
+    def scan_value(self, inputfield):
+        self.qr_content_to = inputfield
+        if platform == 'android':
+            F.ZBarCamValuePopup().open()
+        else:
+            # temporary hack to simulate scanning a code
+            # TODO allow webcam input
+            id = str(uuid4())
+            self.value = id
 
     def scan_input(self, field):
         """ TODO set text input field to content of next QR code (open popup) ; set focus to next input field """
@@ -137,7 +156,7 @@ class mTag(App):
             print("File chooser not implemented on this platform")
 
     def picture_for(self, target_id, thumbnail = False):
-        print('PICTURE TARGET',target_id)
+        #print('PICTURE TARGET',target_id, thumbnail)
         if thumbnail:
             path = Path(
                 self.user_data_dir,
@@ -198,8 +217,8 @@ class mTag(App):
                 # open zoomable image popup
                 F.ZoomImagePopup().open()
 
-    def edit_entry(self):
-        self.target_entry = get_entry(self.db, self.target_uuid)
+    def edit_entry(self, entry_id):
+        self.target_entry = get_entry(self.db, entry_id)
         print("EDIT:",self.target_entry['id'])
         self.switch_screen("editor")
 
