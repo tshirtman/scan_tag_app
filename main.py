@@ -60,7 +60,7 @@ class mTag(App):
     def pictures_path(self) -> Path:
         return Path(self.user_data_dir, settings.bindir)
 
-    @property                    
+    @property
     def thumbnails_path(self) -> Path:
         return Path(self.user_data_dir, settings.thumbdir)
 
@@ -144,6 +144,7 @@ class mTag(App):
             print(self.db_path)
             print(self.pictures_path)
             button.background_color = (.2,.2,.2)
+        self.load_entries()
 
     def call_app(self, button):
         print("Not implemented : call_app()")
@@ -169,7 +170,7 @@ class mTag(App):
                 settings.bindir,
                 target_id or '_'
             ).with_suffix(".jpeg")
-    
+
         if path.exists():
             return str(path)
         else:
