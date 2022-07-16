@@ -23,7 +23,9 @@ import settings
 
 from urllib.parse import urlparse
 
+# test features
 THUMBNAILS = False
+POSITION = True
 
 resource_add_path("./xcamera/")
 
@@ -53,6 +55,10 @@ class mTag(App):
         self.load_entries()
         self.pictures_path.mkdir(parents=True, exist_ok=True)
         self.thumbnails_path.mkdir(parents=True, exist_ok=True)
+
+        if platform == 'android' and POSITION:
+            #Initiate android-module
+            self.droid = android.Android()
 
     @property
     def db_path(self) -> Path:
@@ -290,31 +296,41 @@ class mTag(App):
             - gps (pure gps location, slow, energy consuming, but very accurate)
             - network (mix of gps and wifi/cell locating, faster, but less accurate)
             - passwive (like above but completely without using gps)
+
+            Adapted from
+                https://stackoverflow.com/questions/29797435/get-precise-android-gps-location-in-python
+
+            OSM support (TODO): https://wiki.openstreetmap.org/wiki/Android
         '''
+        if not POSITION:
+            button.text = 'Not available :-/'
+            return
+
         if platform == 'android':
             # import needed modules
             import android
             import time
-            import sys, select, os #for loop exit
-
-            #Initiate android-module
-            droid = android.Android()
+            #import sys, select, os #for loop exit
 
             #notify me
-            droid.makeToast("fetching GPS data")
+            #self.droid.makeToast("fetching GPS data")
+            if button is not None:
+                button.text = "fetching position..."
+            else:
+                print( "fetching position..." )
 
             #print("start gps-sensor...")
-            droid.startLocating()
+            self.droid.startLocating()
 
             while True:
                 #exit loop hook
-                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                    line = input()
-                    print("exit endless loop...")
-                    break
+                #if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                #    line = input()
+                #    print("exit endless loop...")
+                #    break
 
                 #wait for location-event
-                event = droid.eventWaitFor('location',5000).result
+                event = self.droid.eventWaitFor('location',5000).result
                 try :
                     if button is None:
                         print(' ; '.join([': '.join([k, repr(event['data'][method][k])]) for k in event['data'][method].keys()]))
@@ -330,20 +346,20 @@ class mTag(App):
                 except KeyError:
                     if method not in ('gps','network','passive'):
                         if button is None:
-                            print(f"Method {method} not supported")
+                            print(f"Method '{method}' not supported")
                         else:
                             button.text = f"Error: {method}"
                         break
                     else:
                         continue
                 else:
-                    droid.eventClearBuffer()
+                    self.droid.eventClearBuffer()
 
 
                 #time.sleep(5) #wait for 5 seconds
 
             print("stop gps-sensor...")
-            droid.stopLocating()
+            self.droid.stopLocating()
         else:
             print("No location support on this platform")
 
