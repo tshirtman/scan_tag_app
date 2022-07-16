@@ -284,5 +284,68 @@ class mTag(App):
             # not in list
             field.text = settings.presetkeys[0]
 
+    def get_location(self, method = 'network', button = None):
+        '''
+            method is one of:
+            - gps (pure gps location, slow, energy consuming, but very accurate)
+            - network (mix of gps and wifi/cell locating, faster, but less accurate)
+            - passwive (like above but completely without using gps)
+        '''
+        if platform == 'android':
+            # import needed modules
+            import android
+            import time
+            import sys, select, os #for loop exit
+
+            #Initiate android-module
+            droid = android.Android()
+
+            #notify me
+            droid.makeToast("fetching GPS data")
+
+            #print("start gps-sensor...")
+            droid.startLocating()
+
+            while True:
+                #exit loop hook
+                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                    line = input()
+                    print("exit endless loop...")
+                    break
+
+                #wait for location-event
+                event = droid.eventWaitFor('location',5000).result
+                try :
+                    if button is None:
+                        print(' ; '.join([': '.join([k, repr(event['data'][method][k])]) for k in event['data'][method].keys()]))
+                    else:
+                        #timestamp = repr(event['data'][method]['time'])
+                        longitude = repr(event['data'][method]['longitude'])
+                        latitude = repr(event['data'][method]['latitude'])
+                        altitude = repr(event['data'][method]['altitude'])
+                        #speed = repr(event['data'][method]['speed'])
+                        #accuracy = repr(event['data'][method]['accuracy'])
+                        button.text = ' ; '.join([longitude, latitude, altitude])
+                    break
+                except KeyError:
+                    if method not in ('gps','network','passive'):
+                        if button is None:
+                            print(f"Method {method} not supported")
+                        else:
+                            button.text = f"Error: {method}"
+                        break
+                    else:
+                        continue
+                else:
+                    droid.eventClearBuffer()
+
+
+                #time.sleep(5) #wait for 5 seconds
+
+            print("stop gps-sensor...")
+            droid.stopLocating()
+        else:
+            print("No location support on this platform")
+
 if __name__ == '__main__':
     mTag().run()

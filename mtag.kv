@@ -123,9 +123,9 @@ ScreenManager:
                 height: self.minimum_height
                 default_size_hint: 1, None
                 default_size: 0, wheight
-        DataExportButton:
-            size_hint_x: None
-            width: wheight
+        BoxLayout:
+            DataExportButton:
+            ReadPositionButton:
 
 
 <EntryRow>:
@@ -213,8 +213,15 @@ ScreenManager:
     background_color: (.99,.75,0.25,1)
 
 <DataExportButton@AppButton>:
-    text: "export DB"
+    text: "export\nDB"
+    size_hint_x: None
+    width: wheight
     on_release: app.export_db( button = self )
+
+<ReadPositionButton@AppButton>:
+    text: "get location"
+    #size_hint_x: None
+    on_release: app.get_location( method = 'network', button = self )
 
 #<DeleteEntryButton@AppButton>:
 #    text: "delete"
