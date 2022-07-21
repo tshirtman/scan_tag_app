@@ -125,7 +125,7 @@ ScreenManager:
                 default_size: 0, wheight
         BoxLayout:
             DataExportButton:
-            ReadPositionButton:
+            #ReadPositionButton:
 
 
 <EntryRow>:
@@ -218,10 +218,10 @@ ScreenManager:
     width: wheight
     on_release: app.export_db( button = self )
 
-<ReadPositionButton@AppButton>:
-    text: "get location"
-    #size_hint_x: None
-    on_release: app.get_location( method = 'network', button = self )
+#<ReadPositionButton@AppButton>:
+#    text: "get location"
+#    #size_hint_x: None
+#    on_release: app.get_location( method = 'network', button = self )
 
 #<DeleteEntryButton@AppButton>:
 #    text: "delete"

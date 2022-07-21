@@ -25,7 +25,7 @@ from urllib.parse import urlparse
 
 # test features
 THUMBNAILS = False
-POSITION = True
+POSITION = False    # also uncomment references to ReadPositionButton in mtag.kv
 
 resource_add_path("./xcamera/")
 
@@ -58,6 +58,7 @@ class mTag(App):
 
         if platform == 'android' and POSITION:
             #Initiate android-module
+            # this seems to crash the app
             self.droid = android.Android()
 
     @property
