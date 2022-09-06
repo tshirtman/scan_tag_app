@@ -17,50 +17,56 @@ ScreenManager:
     size_hint_y: None
     height: wheight
 
+<WaitPopup@Popup>
+	Label: 
+		text: "Please wait..."
+
 <ZBarCamPopup@Popup>:
     BoxLayout:
         orientation: "vertical"
         ZBarCam:
             id: zbarcam
-        RecycleView:
-            viewclass: "ZBarSelectButton"
-            data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
-            RecycleBoxLayout:
-                orientation: 'vertical'
-                size_hint_y: None
-                height: self.minimum_height
-                default_size_hint: 1, None
-                default_size: 0, wheight
+	    on_symbols: app.edit_entry(self.symbols[0]) if self.symbols else None
+        #RecycleView:
+        #    viewclass: "ZBarSelectButton"
+        #    data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
+        #    RecycleBoxLayout:
+        #        orientation: 'vertical'
+        #        size_hint_y: None
+        #        height: self.minimum_height
+        #        default_size_hint: 1, None
+        #        default_size: 0, wheight
 
 <ZBarCamValuePopup@Popup>:
     BoxLayout:
         orientation: "vertical"
         ZBarCam:
             id: zbarcam
-        RecycleView:
-            viewclass: "ZBarSelectValueButton"
-            data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
-            RecycleBoxLayout:
-                orientation: 'vertical'
-                size_hint_y: None
-                height: self.minimum_height
-                default_size_hint: 1, None
-                default_size: 0, wheight
+	    on_symbols: app.edit_entry(self.symbols[0]) if self.symbols else None
+        #RecycleView:
+        #    viewclass: "ZBarSelectValueButton"
+        #    data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
+        #    RecycleBoxLayout:
+        #        orientation: 'vertical'
+        #        size_hint_y: None
+        #        height: self.minimum_height
+        #        default_size_hint: 1, None
+        #        default_size: 0, wheight
 
 
-<ZBarSelectButton@AppButton>:
-    popup: None
-    on_release:
-        self.popup.ids.zbarcam.play = False
-        self.popup.dismiss() if self.popup else None
-        app.edit_entry(app.sanitize(self.text))
-
-<ZBarSelectValueButton@AppButton>:
-    popup: None
-    on_release:
-        self.popup.ids.zbarcam.play = False
-        self.popup.dismiss() if self.popup else None
-        app.value = app.sanitize(self.text)
+#<ZBarSelectButton@AppButton>:
+#    popup: None
+#    on_release:
+#        self.popup.ids.zbarcam.play = False
+#        self.popup.dismiss() if self.popup else None
+#        app.edit_entry(app.sanitize(self.text))
+#
+#<ZBarSelectValueButton@AppButton>:
+#    popup: None
+#    on_release:
+#        self.popup.ids.zbarcam.play = False
+#        self.popup.dismiss() if self.popup else None
+#        app.value = app.sanitize(self.text)
 
 
 <XCameraPopup@Popup>:
@@ -113,7 +119,10 @@ ScreenManager:
         orientation: 'vertical'
         padding: "10dp"
         spacing: "10dp"
-        QRScanButton:
+        QRScanButtonShelf:
+        QRScanButtonSet:
+        QRScanButtonBox:
+        QRScanButtonPart:
         RecycleView:
             data: app.entries
             RecycleBoxLayout:
@@ -125,7 +134,7 @@ ScreenManager:
                 default_size: 0, wheight
         BoxLayout:
             DataExportButton:
-            ReadPositionButton:
+            #ReadPositionButton:
 
 
 <EntryRow>:
@@ -159,15 +168,19 @@ ScreenManager:
             AddAnotherButton:
                 on_release:
                     # save this value and reopen this dialog
-                    app.save_text_field(root.index, ti_key.text, ti_value.text)
+                    app.save_text_field('Ansuz', root.index, ti_key.text, ti_value.text)
                     root.dismiss()
                     app.edit_text_field()
             SaveButton:
                 text: "save + scan"
                 on_release:
-                    app.save_text_field(root.index, ti_key.text, ti_value.text) if ti_value.text != '' else None
+					#waitpopup = WaitPopup
+					#waitpopup.open()
+                    app.save_text_field('Ansuz', root.index, ti_key.text, ti_value.text) if ti_value.text != '' else None
+					app.save_entry()
                     root.dismiss()
                     # scan new item
+					#waitpopup.dismiss()
                     app.scan_id()
 
         BoxLayout:
@@ -201,9 +214,24 @@ ScreenManager:
             id: ti_value
             text: root.value
 
-<QRScanButton@AppButton>:
-    text: 'scan new item'
-    on_release: app.scan_id()
+<QRScanButtonShelf@AppButton>:
+    text: '+ shelf'
+    on_release: app.scan_id('shelf')
+    background_color: (.99,.75,0.25,1)
+
+<QRScanButtonSet@AppButton>:
+    text: '+ set'
+    on_release: app.scan_id('set')
+    background_color: (.99,.75,0.25,1)
+
+<QRScanButtonBox@AppButton>:
+    text: '+ box'
+    on_release: app.scan_id('box')
+    background_color: (.99,.75,0.25,1)
+
+<QRScanButtonPart@AppButton>:
+    text: '+ part'
+    on_release: app.scan_id('part')
     background_color: (.99,.75,0.25,1)
 
 <QRScanValueButton@AppButton>:
@@ -218,18 +246,13 @@ ScreenManager:
     width: wheight
     on_release: app.export_db( button = self )
 
-#<ReadPositionButton@AppButton>:
-#    text: "get location"
-#    #size_hint_x: None
-#    on_release: app.get_location( method = 'network', button = self )
-
-<ReadPositionButton@ToggleButton>:
-    text: 'GPS' if self.state == 'normal' else 'Stop'
-    size_hint: 1, None
-    height: wheight
-    on_state:
-        app.GPSstart(1000, 1) if self.state == 'down' else \
-        app.GPSstop()
+#<ReadPositionButton@ToggleButton>:
+#    text: 'GPS' if self.state == 'normal' else 'Stop'
+#    size_hint: 1, None
+#    height: wheight
+#    on_state:
+#        app.GPSstart(1000, 1) if self.state == 'down' else \
+#        app.GPSstop()
 
 #<DeleteEntryButton@AppButton>:
 #    text: "delete"
@@ -375,12 +398,17 @@ ScreenManager:
             size_hint_y: None
             height: self.texture_size[1]
 
+        Label:
+            text: (app.target_entry).get("otype", "object type")
+            size_hint_y: None
+            height: self.texture_size[1]
+
         BoxLayout:
             size_hint_y: None
             height: Wheight
-			ExternalAppButton:
-			FileChooserButton:
-            EditPictureButton:
+			#ExternalAppButton:
+			#FileChooserButton:
+            #EditPictureButton:
                 # TODO
             PictureButton:
                 take_picture: picture

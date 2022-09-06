@@ -13,6 +13,10 @@ from kivy.app import App
 from kivy.factory import Factory as F
 from kivy.clock import Clock, mainthread
 from kivy.resources import resource_add_path
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
 
 #gi.require_version('Gst', '1.0')   TODO should be done inside XCamera, so as to avoid warning
 from xcamera.xcamera import XCamera
@@ -24,8 +28,8 @@ import settings
 from urllib.parse import urlparse
 
 # test features
-THUMBNAILS = False
-POSITION = True    # also uncomment references to ReadPositionButton in mtag.kv
+THUMBNAILS = True
+POSITION = False    # also uncomment references to ReadPositionButton in mtag.kv
 
 if POSITION:
     from plyer import gps
@@ -43,6 +47,7 @@ class EntryRow(F.ButtonBehavior, F.BoxLayout):
 
 class TextFieldEditPopup(F.Popup):
     index = F.NumericProperty(allownone=True)
+    rune = F.StringProperty()   # TODO not shown nor editable!
     key = F.StringProperty()
     value = F.StringProperty()
 
@@ -64,17 +69,18 @@ class mTag(App):
         self.pictures_path.mkdir(parents=True, exist_ok=True)
         self.thumbnails_path.mkdir(parents=True, exist_ok=True)
 
-        try:
-            gps.configure(on_location=self.on_location,
-                          on_status=self.on_status)
-        except NotImplementedError:
-            import traceback
-            traceback.print_exc()
-            self.gps_status = 'GPS is not implemented for your platform'
+        if POSITION:
+            try:
+                gps.configure(on_location=self.on_location,
+                              on_status=self.on_status)
+            except NotImplementedError:
+                import traceback
+                traceback.print_exc()
+                self.gps_status = 'GPS is not implemented for your platform'
 
-        if platform == "android":
-            print("gps.py: Android detected. Requesting permissions")
-            self.request_android_permissions()
+            if platform == "android":
+                print("gps.py: Android detected. Requesting permissions")
+                self.request_android_permissions()
 
         #return Builder.load_string(kv)
 
@@ -155,14 +161,27 @@ class mTag(App):
             self.load_entries()
         self.root.current = target
 
-    def scan_id(self):
+    def scan_id(self,otype = None):
+        if otype == None:
+            if self.target_entry['otype'] == 'shelf':
+                print("last item was a shelf.. what now?")
+                self.switch_screen("entries")
+                return
+            elif self.target_entry['otype'] == 'set':
+                otype = 'box'
+            elif self.target_entry['otype'] == 'box':
+                otype = 'part'
+            elif self.target_entry['otype'] == 'part':
+                otype = 'part'
+
+
         if platform == 'android':
             F.ZBarCamPopup().open()
         else:
             # temporary hack to simulate scanning a code
             # TODO allow webcam input or manual entry
             id = str(uuid4())
-            Clock.schedule_once(lambda *_: self.edit_entry(id), 2)
+            Clock.schedule_once(lambda *_: self.edit_entry(id,otype), 2)
         #print('EDITED:',self.target_entry['id'], '(previous value ; this is WRONG!)') # TODO this is the _previous_ id!
         #self.target_entry = get_entry(self.db, entry_id)
 
@@ -317,32 +336,104 @@ class mTag(App):
                 # open zoomable image popup
                 F.ZoomImagePopup().open()
 
-    def edit_entry(self, entry_id):
+    def edit_entry(self, entry_id, otype = None):
         self.target_entry = get_entry(self.db, entry_id)
-        print("EDIT:",self.target_entry['id'])
+        #print("EDIT:",self.target_entry['id'])
+        #print('DATA:',self.target_entry['text_fields'])
+
+        if otype is None:
+            for t in self.target_entry['text_fields']:
+                if t['rune'] == 'Ingwaz' and t['key'] == 'ch.ju.sauser-frères':
+                    otype = t['value']
+                    break
+        self.target_entry['otype'] = otype
+        #print("TYPE:",self.target_entry['otype'])
+
+        if otype == 'shelf':
+            self.shelf_id = entry_id
+        elif otype == 'set':
+            self.set_id = entry_id
+
         self.switch_screen("editor")
 
     def edit_text_field(self, index=None):
         data = self.target_entry["text_fields"][index] if index is not None else {}
         p = F.TextFieldEditPopup(
             index=index,
-            key=data.get("key", ""),
-            value=data.get("value", ""),
+            key=data.get('key', ""),
+            value=data.get('value', ""),
         )
         p.open()
 
     def save_entry(self):
         # this saves everything again.. kept because of key+val pairs deletion
-        save_entry(self.db, self.target_entry)
-        self.switch_screen("entries")
+        otype = self.target_entry['otype']
+        entry_id = self.target_entry['id']
+        errors = []
 
-    def save_text_field(self, index=None, key="", value=""):
-        data = {"key": key, "value": value}
+        # making sure we have all the required values
+        required_props = []
+        for prop in settings.presetkeys[otype]:
+            print(f"{otype}: requesting property {prop[2]}")
+            required_props.append(prop[2])
+        for entry in self.target_entry['text_fields']:
+            try:
+                required_props.remove(entry['key'])
+                print(f"found property '{entry['key']}'")
+            except ValueError:
+                pass
+        for prop in required_props:
+            errors.append(f"ERROR: '{prop}' is not set when it should be")
+
+        if otype == 'box':
+            self.box_id = entry_id
+            try:
+                print('AUTO-ADD BOX',entry_id, '>>', self.shelf_id)
+            except AttributeError:
+                errors.append("ERROR: box is not on a shelf")
+        elif otype == 'part':
+            try: 
+                print('AUTO-ADD BOX',entry_id, '>>', self.box_id)
+            except AttributeError:
+                errors.append("ERROR: part is not in a box")
+            try: 
+                print('AUTO-ADD SET',entry_id, '>>', self.set_id)
+            except AttributeError:
+                errors.append("ERROR: part is not in a set")
+
+        if len(errors):
+            content = BoxLayout(orientation='vertical')
+            content.add_widget(Label(text='\n'.join(errors)))
+            button = Button(text='Close')
+            content.add_widget(button)
+            popup = Popup(title='Errors detected', content=content, auto_dismiss=False)
+            button.bind(on_press=popup.dismiss)
+            popup.open()
+        else:
+            # TODO only add these if not already present! this add multiple entries when multiple identical key are allowed!
+            if otype == 'shelf':
+                print("Adding type 'shelf'")
+                self.save_text_field( 'Ingwaz', None, 'ch.ju.sauser-frères', 'shelf' )
+            elif otype == 'set':
+                self.save_text_field( 'Ingwaz', None, 'ch.ju.sauser-frères', 'set' )
+            elif otype == 'box':
+                self.save_text_field( 'Ingwaz', None, 'ch.ju.sauser-frères', 'box' )
+                self.save_text_field( 'Isaz', None, 'shelf', self.shelf_id )
+            elif otype == 'part':
+                self.save_text_field( 'Ingwaz', None, 'ch.ju.sauser-frères', 'part' )
+                self.save_text_field( 'Isaz', None, 'box', self.box_id )
+                self.save_text_field( 'Isaz', None, 'set', self.set_id )
+            save_entry(self.db, self.target_entry)  # TODO why is this needed here? it's already called by save_text_field()
+            self.switch_screen("entries")
+
+    def save_text_field(self, rune=None, index=None, key="", value=""):
+        data = {'rune': rune, 'key': key, 'value': value}
         text_fields = self.target_entry["text_fields"][:]
         if index is not None:
             text_fields[index] = data
         else:
             text_fields.append(data)
+        #print('TEXT_FIELDS',text_fields)
 
         self.target_entry["text_fields"] = text_fields
         # this saves all key/value pairs... TODO save only the one we just edited!
@@ -355,15 +446,26 @@ class mTag(App):
 
     def preset_value(self, field):
         # TODO open a popup with a list, populated from sqlite (with auto-add)
+        otype = self.target_entry['otype']
         try:
-            i = settings.presetkeys.index(field.text)
-            if i == len(settings.presetkeys)-1:
-                field.text = settings.presetkeys[0]
-            else:
-                field.text = settings.presetkeys[i+1]
+            #i = settings.presetkeys[otype].index(field.text)
+            i = 0
+            for v in settings.presetkeys[otype]:
+                if v[2] == field.text:
+                    raise Exception("MatchFound")
+                i += 1
+            raise ValueError
         except ValueError:
             # not in list
-            field.text = settings.presetkeys[0]
+            field.text = settings.presetkeys[otype][0][2]
+        except Exception as e:
+            if str(e) == "MatchFound":
+                if i == len(settings.presetkeys[otype])-1:
+                    field.text = settings.presetkeys[otype][0][2]
+                else:
+                    field.text = settings.presetkeys[otype][i+1][2]
+            else:
+                raise e
 
 """
     def get_location(self, method = 'network', button = None):

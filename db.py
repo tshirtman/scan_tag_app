@@ -15,6 +15,7 @@ from sqlalchemy import (
     delete,
     select,
     update,
+    tuple_,
 )
 
 
@@ -27,9 +28,10 @@ logger = logging.getLogger(__name__)
 class TextField(Base):
     __tablename__ = 'textfield'
 
-    name = Column(String, primary_key=True)
+    key = Column(String, primary_key=True)
     entry_id = Column(String, ForeignKey('entry.id'), primary_key=True)
     value = Column(String)
+    rune = Column(String)
     entry = relationship("Entry", back_populates='fields')
 
 
@@ -70,7 +72,8 @@ def _to_dict(entry: Entry, full=False):
 @to_dict.register
 def _to_dict(text_field: TextField):
     return {
-        'key': text_field.name,
+        'rune': text_field.rune,
+        'key': text_field.key,
         'value': text_field.value,
     }
 
@@ -127,8 +130,8 @@ def save_entry(engine, data):
             created=datetime.now(),
             updated=datetime.now(),
         )
-        existing_fields = {field.name for field in entry.fields}
-        update_fields = {field['key'] for field in data['text_fields']}
+        existing_fields = {field.key for field in entry.fields}  # TODO add sth for multiple key values?
+        update_fields = {field['key'] for field in data['text_fields']}  # TODO add sth for multiple key values?
 
         to_create = update_fields - existing_fields
         to_delete = existing_fields - update_fields
@@ -138,14 +141,14 @@ def save_entry(engine, data):
             delete(TextField)
             .where(
                 (TextField.entry_id == data['id'])
-                & (TextField.name.in_(to_delete))
+                & tuple_(TextField.key, TextField.rune).in_(to_delete)
             )
             .execution_options(synchronize_session="fetch")
         )
 
         session.add_all([
-            TextField(name=item["key"], value=item["value"], entry=entry)
-            for item in data['text_fields'] if item["key"] in to_create
+            TextField(rune=item["rune"], key=item["key"], value=item["value"], entry=entry)
+            for item in data['text_fields'] if item["key"] in to_create  # TODO add sth for multiple key values?
         ])
 
         for field in data["text_fields"]:
@@ -154,7 +157,7 @@ def save_entry(engine, data):
             session.execute(
                 update(TextField)
                 .where(
-                    (TextField.name == field["key"])
+                    (TextField.key == field["key"])  # TODO add sth for multiple key values?
                     & (TextField.entry_id == data["id"])
                 )
                 .values(value=field["value"])
