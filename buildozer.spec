@@ -40,10 +40,10 @@ version = 0.2.2
 requirements =
     android,
     python3,
-    python3==3.9,
+    python3==3.9.5,
     kivy,
     libzbar,
-    pyzbar==0.1.9,
+    pyzbar==0.1.8,
     sqlalchemy==1.4.39,
     Pillow,
     xcamera==2020.613,
