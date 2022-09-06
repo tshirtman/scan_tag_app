@@ -1,9 +1,9 @@
 name: CI
 on:
   push:
-    branches: [ main ]
+    branches: [ main, sauser ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, sauser ]
 
 jobs:
   build:
