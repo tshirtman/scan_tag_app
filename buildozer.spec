@@ -28,8 +28,8 @@ source.include_exts = py,png,jpg,kv,atlas
 # Do not prefix with './'
 #source.exclude_patterns = license,images/*/*.jpg
 
-# (str) Application versioning (method 1)
-version = 0.2.2-sauser
+# (str) Application versioning (method 1) - ONLY SUPPORTS NUMBERS!
+version = 0.2.2
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
@@ -40,10 +40,10 @@ version = 0.2.2-sauser
 requirements =
     android,
     python3,
-    python3==3.8.1,
+    python3==3.10.6,
     kivy,
     libzbar,
-    pyzbar==0.1.8,
+    pyzbar==0.1.9,
     sqlalchemy==1.4.39,
     Pillow,
     xcamera==2020.613,

@@ -1,13 +1,13 @@
 from kivy.utils import platform
 
 
-def play_shutter():
-    # bah, apparently we need to delay the import of kivy.core.audio, lese
-    # kivy cannot find a camera provider, at lease on linux. Maybe a
-    # gstreamer/pygame issue?
-    from kivy.core.audio import SoundLoader
-    sound = SoundLoader.load("data/shutter.wav")
-    sound.play()
+#def play_shutter():
+#    # bah, apparently we need to delay the import of kivy.core.audio, lese
+#    # kivy cannot find a camera provider, at lease on linux. Maybe a
+#    # gstreamer/pygame issue?
+#    from kivy.core.audio import SoundLoader
+#    sound = SoundLoader.load("data/shutter.wav")
+#    sound.play()
 
 
 if platform == 'android':
@@ -23,12 +23,12 @@ else:
 
     def take_picture(camera_widget, filename, on_success):
         camera_widget.texture.save(filename, flipped=False)
-        play_shutter()
+        #play_shutter()
         on_success(filename)
 
     def set_orientation(value):
         previous = get_orientation()
-        print('FAKE orientation set to {}'.format(value))
+        #print('FAKE orientation set to {}'.format(value))
         get_orientation.value = value
         return previous
 

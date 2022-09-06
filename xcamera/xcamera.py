@@ -25,7 +25,7 @@ def darker(color, factor=0.5):
 
 
 def get_filename():
-    return datetime.datetime.now().strftime('%Y-%m-%d %H.%M.%S.jpg')
+    return datetime.datetime.now().strftime('%Y-%m-%d %H.%M.%S.jpg')    # TODO remove that ugly space
 
 
 def is_android():

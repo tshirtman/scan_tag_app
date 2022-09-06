@@ -10,7 +10,7 @@ FloatLayout:
 
     XCamera:
         id: xcamera
-        on_picture_taken: app.picture_taken(*args)
+        #on_picture_taken: app.picture_taken(*args)
 
     BoxLayout:
         orientation: 'horizontal'
@@ -31,8 +31,8 @@ class CameraApp(App):
     def build(self):
         return Builder.load_string(kv)
 
-    def picture_taken(self, obj, filename):
-        print('Picture taken and saved to {}'.format(filename))
+    #def picture_taken(self, obj, filename):
+    #    print('Picture taken and saved to {}'.format(filename))
 
 
 def main():
