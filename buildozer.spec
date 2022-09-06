@@ -40,7 +40,7 @@ version = 0.2.2
 requirements =
     android,
     python3,
-    python3==3.10.6,
+    python3==3.9,
     kivy,
     libzbar,
     pyzbar==0.1.9,
