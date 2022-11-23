@@ -134,7 +134,7 @@ ScreenManager:
 				default_size: 0, wheight
 		BoxLayout:
 			DataExportButton:
-			#ReadPositionButton:
+			ReadPositionButton:
 
 
 <EntryRow>:
@@ -246,13 +246,13 @@ ScreenManager:
 	width: wheight
 	on_release: app.export_db( button = self )
 
-#<ReadPositionButton@ToggleButton>:
-#	text: 'GPS' if self.state == 'normal' else 'Stop'
-#	size_hint: 1, None
-#	height: wheight
-#	on_state:
-#		app.GPSstart(1000, 1) if self.state == 'down' else \
-#		app.GPSstop()
+<ReadPositionButton@ToggleButton>:
+	text: 'GPS' if self.state == 'normal' else 'Stop'
+	size_hint: 1, None
+	height: wheight
+	on_state:
+		app.GPSstart(1000, 1) if self.state == 'down' else \
+		app.GPSstop()
 
 #<DeleteEntryButton@AppButton>:
 #	text: "delete"

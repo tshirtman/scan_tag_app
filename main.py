@@ -29,7 +29,7 @@ from urllib.parse import urlparse
 
 # test features
 THUMBNAILS = True
-POSITION = False    # also uncomment references to ReadPositionButton in mtag.kv
+POSITION = True    # also uncomment references to ReadPositionButton in mtag.kv
 
 if POSITION:
     from plyer import gps
