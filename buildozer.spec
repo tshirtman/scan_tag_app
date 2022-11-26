@@ -41,6 +41,7 @@ requirements =
     android,
     python3,
     python3==3.9.5,
+    plyer,
     kivy,
     libzbar,
     pyzbar==0.1.8,
