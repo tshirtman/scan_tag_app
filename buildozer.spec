@@ -28,7 +28,7 @@ source.include_exts = py,png,jpg,kv,atlas
 # Do not prefix with './'
 #source.exclude_patterns = license,images/*/*.jpg
 
-# (str) Application versioning (method 1) - ONLY SUPPORTS NUMBERS!
+# (str) Application versioning (method 1) - ONLY SUPPORTS NUMBERS (and points)!
 version = 0.2.2
 
 # (str) Application versioning (method 2)
@@ -49,7 +49,6 @@ requirements =
     Pillow,
     xcamera==2020.613,
     androidstorage4kivy,
-    gi,
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes

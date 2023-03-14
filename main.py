@@ -22,8 +22,11 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.core.window import Window
 
-import gi
-gi.require_version('Gst', '1.0')
+if platform == 'linux':
+    # don't know how to set the requirement in buildoer.spec.. mostly for getting rid of a warning anyway
+    import gi
+    gi.require_version('Gst', '1.0')
+
 from xcamera.xcamera import XCamera
 from zbarcam.zbarcam import ZBarCam
 
