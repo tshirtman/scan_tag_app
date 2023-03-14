@@ -173,7 +173,7 @@ ScreenManager:
 <EntryRow>:
 	id: ""
 	on_release:
-		print('Set type:' , dec(self.id))
+		print('open:' , dec(self.id))
 		app.edit_entry(self.id)
 	Image:
 		source: app.picture_for(root.id, thumbnail = True)
@@ -288,14 +288,14 @@ ScreenManager:
 	text: "export\nDB"
 	size_hint_x: None
 	width: wheight
-	on_release: app.export_db( button = self )
+	on_release: app.export_db( button = self )	# TODO ask for confirmation
 
 <ReadPositionButton@ToggleButton>:
-	text: 'GPS' if self.state == 'normal' else 'Stop'
+	text: 'GPS' if self.state == 'normal' else 'acquiring...'
 	size_hint: 1, None
 	height: wheight
 	on_state:
-		app.GPSstart(1000, 1) if self.state == 'down' else \
+		app.GPSstart(1000, 1, self) if self.state == 'down' else \
 		app.GPSstop()
 
 #<DeleteEntryButton@AppButton>:

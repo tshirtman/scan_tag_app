@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # vim: ts=4 number nowrap
 
+print("alpha")
+
 from pathlib import Path
 from uuid import uuid4
 import logging
@@ -20,7 +22,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.core.window import Window
 
-#gi.require_version('Gst', '1.0')   TODO should be done inside XCamera, so as to avoid warning
+import gi
+gi.require_version('Gst', '1.0')
 from xcamera.xcamera import XCamera
 from zbarcam.zbarcam import ZBarCam
 
@@ -34,12 +37,17 @@ from urllib.parse import urlparse
 THUMBNAILS = True
 POSITION = True    # also uncomment references to ReadPositionButton in mtag.kv
 
+msg_nogps = 'GPS not available'
+
 if POSITION:
     try:
         from plyer import gps
     except ModuleNotFoundError:
-        print("GPS is not available")
+        print(msg_nogps)
+    else:
+        print("plyer import OK")
     #from kivy.properties import StringProperty
+
 
 resource_add_path("./xcamera/")
 
@@ -183,32 +191,21 @@ class mTag(App):
         gps_location = F.StringProperty()
         gps_status = F.StringProperty('Click Start to get GPS location updates')
 
+    #def build(self):
+    #    lf='\n'
+    #    print(f"{10*((10*'*')+lf)}")
+
     def __init__(self):
         super().__init__()
         self.db = get_engine(self.db_path)
         self.load_entries()
         self.pictures_path.mkdir(parents=True, exist_ok=True)
         self.thumbnails_path.mkdir(parents=True, exist_ok=True)
+        self.gps_status = 'pre-init'
 
-        if POSITION:
-            try:
-                gps.configure(on_location=self.on_location,
-                              on_status=self.on_status)
-            except (NotImplementedError, ModuleNotFoundError):
-                #import traceback
-                #traceback.print_exc()
-                self.gps_status = 'GPS is not implemented on your platform'
-            else:
-                if platform == "android":
-                    print("gps.py: Android detected. Requesting permissions")
-                    self.request_android_permissions()
-                else:
-                    print(f"gps.py: unknown platform `{platform}`")
-
-        #return Builder.load_string(kv)
         Window.bind(on_keyboard=self.onBackBtn)
 
-        print(f"{self.user_data_dir = }")
+        print(f"__init__() done ; {self.user_data_dir = }")
 
     def onBackBtn(self, window, key, *args):
         """ To be called whenever user presses Back/Esc Key """
@@ -257,11 +254,39 @@ class mTag(App):
         # request_permissions([Permission.ACCESS_COARSE_LOCATION,
         #                      Permission.ACCESS_FINE_LOCATION])
 
-    def GPSstart(self, minTime, minDistance):
-        try:
-            gps.start(minTime, minDistance)
-        except NotImplementedError:
-            self.gps_location = "NotImplementedError"
+    def GPSinit(self):
+        print("trying GPS...")
+
+        if platform == "android":
+            try:
+                gps.configure(on_location=self.on_location,
+                              on_status=self.on_status)
+            except (NotImplementedError, ModuleNotFoundError):
+                import traceback
+                traceback.print_exc()
+                self.gps_status = msg_nogps
+            else:
+                print("gps.py: Android detected. Requesting permissions")
+                self.request_android_permissions()
+                return True
+        else:
+            self.gps_status = msg_nogps
+            print(self.gps_status)
+
+        return False
+
+
+    def GPSstart(self, minTime, minDistance, widget = None):
+        if ( self.gps_status == 'pre-init' and self.GPSinit() ) or \
+             self.gps_status != msg_nogps:
+            try:
+                gps.start(minTime, minDistance)
+            except NotImplementedError:
+                self.gps_location = "NotImplementedError"
+                widget.text = msg_nogps
+        else:
+                widget.state = "normal"
+                widget.text = msg_nogps
 
     def GPSstop(self):
         try:
