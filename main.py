@@ -113,9 +113,6 @@ if POSITION:
 		from plyer import gps
 	except ModuleNotFoundError:
 		print(msg_nogps)
-	else:
-		print("plyer import OK")
-	#from kivy.properties import StringProperty
 
 
 resource_add_path("./xcamera/")
@@ -187,6 +184,7 @@ class oType:
 		#		return 1
 		#	case 'size_hint_max_y':
 		#		return None
+
 #
 # Kivy Application
 #
@@ -387,6 +385,11 @@ class mTag(App):
 		self.qr_content_to = inputfield
 		if platform == 'android':
 			F.ZBarCamValuePopup().open()
+		elif platform == 'linux':
+			_qr = readQR( settings.video_dev )
+			if _qr is not None:
+				#Clock.schedule_once(lambda *_: self.edit_entry( _qr[0], otype), 2)
+				self.value = _qr
 		else:
 			# temporary hack to simulate scanning a code
 			# TODO allow webcam input
@@ -545,6 +548,12 @@ class mTag(App):
 		print("TODO open file chooser dialog")
 
 	def edit_entry(self, entry_id, otype = None):
+		if type(entry_id) is ZBarSymbol:
+			entry_id = entry_id.data[0]
+			if type(entry_id) is str:
+				print("converting ZBarSymbol string data to bytes")
+				entry_id = enc(entry_id)
+			print(f"lost some data {entry_id[1] = }, {type(entry_id[1])}")
 		self.target_entry = get_entry(self.db, entry_id)
 		#target_entry = get_entry(self.db, entry_id)
 		#print(f"{target_entry = }")
