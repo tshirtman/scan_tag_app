@@ -5,6 +5,7 @@
 #:import wheight settings.wheight
 #:import Wheight settings.Wheight
 #:import NoTransition kivy.uix.screenmanager.NoTransition
+#:import dec enc_dec.dec
 
 <ScreenManager>:
 	transition: NoTransition()
@@ -117,12 +118,14 @@ ScreenManager:
 	name: 'entries'
 	BoxLayout:
 		orientation: 'vertical'
+		#orientation: 'horizontal'
 		padding: "10dp"
 		spacing: "10dp"
-		QRScanButtonShelf:
-		QRScanButtonSet:
-		QRScanButtonBox:
-		QRScanButtonPart:
+		BoxLayout:
+			size_hint_y: None
+			height: wheight
+			QRScanButton:
+			UUIDButton:
 		RecycleView:
 			data: app.entries
 			RecycleBoxLayout:
@@ -136,25 +139,54 @@ ScreenManager:
 			DataExportButton:
 			ReadPositionButton:
 
+<TypeRow>:
+	id: ""
+	on_release:
+		#print('EDITING ID:' , self.id)
+		app.edit_entry(self.id)
+	Image:
+		source: app.picture_for(root.otype, thumbnail = True)
+		size_hint_x: None
+		width: root.height
+	Label:
+		text: root.otype or ""
+
+<TypeSelPopup>:
+	# TODO set title
+	BoxLayout:
+		orientation: 'vertical'
+		padding: "10dp"
+		spacing: "10dp"
+		RecycleView:
+			data: app.preset_types
+			RecycleBoxLayout:
+				size_hint_y: None
+				orientation: 'vertical'
+				viewclass: 'TypeRow'
+				height: self.minimum_height
+				default_size_hint: 1, None
+				default_size: 0, wheight
+		CancelButton:
+			on_release: root.dismiss()
+
 
 <EntryRow>:
 	id: ""
 	on_release:
-		#print('EDITING ID:' , self.id)
+		print('Set type:' , dec(self.id))
 		app.edit_entry(self.id)
 	Image:
 		source: app.picture_for(root.id, thumbnail = True)
 		size_hint_x: None
 		width: root.height
 	Label:
-		text: root.id or ""
+		text: dec(root.id) or ""
 
 
 <TextFieldEditPopup>:
-	# TODO set title
 	index: 0
-	key: ""
-	value: ""
+	#key: b""
+	#value: b""
 
 	BoxLayout:
 		orientation: "vertical"
@@ -197,7 +229,7 @@ ScreenManager:
 		TextInput:
 			size_hint_y: None
 			id: ti_key
-			text: root.key
+			text: dec(root.key)
 			height: wheight
 		
 		BoxLayout:
@@ -212,7 +244,19 @@ ScreenManager:
 				on_release: app.scan_value(ti_value)
 		TextInput:
 			id: ti_value
-			text: root.value
+			text: dec(root.value)
+
+<QRScanButton@AppButton>:
+	text: 'QR scan'
+	size_hint: 3, None
+	on_release: app.scan_id()
+	background_color: (.99,.75,0.25,1)
+
+<UUIDButton@AppButton>:
+	text: 'UUID4'
+	size_hint: 2, None
+	on_release: app.scan_id(get_uuid4=True)
+	background_color: (.8,.6,0.15,1)
 
 <QRScanButtonShelf@AppButton>:
 	text: '+ shelf'
@@ -299,10 +343,17 @@ ScreenManager:
 	on_release: print("Not implemented : edit/crop") #TODO see ShareSheet on https://github.com/Android-for-Python/androidstorage4kivy
 
 <PictureButton@Button>:
-	text: "📷\nphoto"
-	size_hint: 2, None
+	text: "📷 photo"
+	size_hint: 3, None
 	height: Wheight
 	on_release: app.snap_picture()
+	background_color: (0,0,1,1)
+
+<FileButton@Button>:
+	text: "file"
+	size_hint: 2, None
+	height: Wheight
+	on_release: app.import_file()
 	background_color: (0,0,1,1)
 
 <AddButton@Button>:
@@ -350,7 +401,7 @@ ScreenManager:
 	RecycleView:
 		data:
 			[
-			{"index": i, "key": item["key"], "value": item["value"]}
+			{"index": i, "key": dec(item["key"]), "value": dec(item["value"])}
 			for i, item in 
 			enumerate((app.target_entry or {}).get('text_fields', []))
 			]
@@ -387,7 +438,7 @@ ScreenManager:
 
 <EntryEditor@Screen>:
 	name: "editor"
-	item_id: (app.target_entry).get("id", "")
+	item_id: (app.target_entry).get("id_str", "")
 
 	BoxLayout:
 		orientation: "vertical"
@@ -398,9 +449,9 @@ ScreenManager:
 			size_hint_y: None
 			height: self.texture_size[1]
 
-		Label:
-			text: (app.target_entry).get("otype", "object type")
-			size_hint_y: None
+#		Label:
+#			text: (app.target_entry).get("otype", "object type")
+#			size_hint_y: None
 			height: self.texture_size[1]
 
 		BoxLayout:
@@ -412,6 +463,7 @@ ScreenManager:
 		  # TODO
 			PictureButton:
 				take_picture: picture
+			FileButton:
 
 
 		ZoomableImage:

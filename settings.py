@@ -5,7 +5,7 @@ wheight = '48dp'    # height of small widgets
 Wheight = '64dp'    # larger widgets, such as main controls
 sqldb = 'data.sqlite3'
 strprefix = (
-    'https://en.gren.ag/e/',
+    b'https://en.gren.ag/e/',
 )
 presetkeys = {
     'shelf': (
@@ -27,3 +27,17 @@ presetkeys = {
         #( 0, 'Isaz', 'box' ),
     ),
 }
+#preset_types = [
+#    oType('Box', {'Ansuz': ['Width [m]','Length [m]','Height [m]','Tare [kg]']}),
+#    oType('Cup', {'Ansuz': ['Diameter [m]','Height [m]','Volume [m³]','Tare [kg]']}),
+#    oType('Battery', {'Ansuz': ['Battery technology','Capacity in Ah','Voltage','Weight']}),
+#    oType('Motor, asynchronous', {'Ansuz': ['Number of coils','Max voltage','Power [W]','RPM']}),
+#]
+
+encoding = 'utf-8'
+# general settigs
+prefix = b'ch.engrenage'
+# UNIX
+video_dev = '/dev/video0'
+dummy_image_path = '/storage0/naspi/metameta/mtag/'
+

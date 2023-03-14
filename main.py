@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # vim: ts=4 number nowrap
+
 from pathlib import Path
 from uuid import uuid4
 import logging
@@ -17,6 +18,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.core.window import Window
 
 #gi.require_version('Gst', '1.0')   TODO should be done inside XCamera, so as to avoid warning
 from xcamera.xcamera import XCamera
@@ -24,6 +26,7 @@ from zbarcam.zbarcam import ZBarCam
 
 from db import get_engine, save_entry, get_entry, get_entries
 import settings
+from enc_dec import *
 
 from urllib.parse import urlparse
 
@@ -32,8 +35,11 @@ THUMBNAILS = True
 POSITION = True    # also uncomment references to ReadPositionButton in mtag.kv
 
 if POSITION:
-    from plyer import gps
-    from kivy.properties import StringProperty
+    try:
+        from plyer import gps
+    except ModuleNotFoundError:
+        print("GPS is not available")
+    #from kivy.properties import StringProperty
 
 resource_add_path("./xcamera/")
 
@@ -42,14 +48,129 @@ logger = logging.getLogger(__name__)
 
 
 class EntryRow(F.ButtonBehavior, F.BoxLayout):
-    id = F.StringProperty()
+    id_str = F.StringProperty()
+    id = F.ObjectProperty()
+
+class TypeRow(F.ButtonBehavior, F.BoxLayout):
+    otype = F.StringProperty()
+    otype_bytes = F.ObjectProperty()
 
 
 class TextFieldEditPopup(F.Popup):
     index = F.NumericProperty(allownone=True)
     rune = F.StringProperty()   # TODO not shown nor editable!
-    key = F.StringProperty()
-    value = F.StringProperty()
+    key = F.ObjectProperty()
+    value = F.ObjectProperty()
+
+class TypeSelPopup(F.Popup):
+    otypes = F.DictProperty()
+
+class oType:
+    def __init__(self, name, props = None):
+        self.id = name
+        if props is not None:
+            self.props = props # dict with runes as keys
+        else:
+            print("TODO fetch data from database")
+
+
+    def items(self):
+        return  (
+            ('key0', 'value0'),
+            ('key1', 'value1'),
+        )
+
+    def get(self, x,y):
+        #print(f"oType.get({x},{y})")
+        return y
+        #match x:
+        #    case 'width':
+        #        return 42
+        #    case 'height':
+        #        return 12
+        #    case 'size':
+        #        return [0,48]
+        #    case 'pos_hint':
+        #        return 0,0
+        #    case 'size_hint':
+        #        return 1,None
+        #    case 'size_hint_min':
+        #        return 1,None
+        #    case 'size_hint_max':
+        #        return 1,None
+        #    case 'size_hint_x':
+        #        return 1
+        #    case 'size_hint_y':
+        #        return None
+        #    case 'size_hint_min_x':
+        #        return 1
+        #    case 'size_hint_min_y':
+        #        return None
+        #    case 'size_hint_max_x':
+        #        return 1
+        #    case 'size_hint_max_y':
+        #        return None
+import cv2
+from pyzbar.pyzbar import decode, ZBarSymbol
+def readQR( video_dev,_set = None ):
+	'''
+		画像キャプチャ
+		VideoCaptureインスタンス生成
+	'''
+	cap = cv2.VideoCapture(video_dev, cv2.CAP_DSHOW)
+	cap.open(video_dev)
+	
+	try:
+		while cap.isOpened():
+			ret, frame = cap.read()
+		
+			if ret:
+				# デコード
+				value = decode(frame, symbols=[ZBarSymbol.QRCODE])
+		
+				if value:
+					for qrcode in value:
+						if _set: _set[qrcode.data] = True
+						else:
+							try:
+								cv2.destroyWindow('pyzbar')
+							except cv2.error:
+								#print("OOPS")
+								pass
+							else:
+								x, y, w, h = qrcode.rect
+
+								cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
+	
+								qrimage_path = '/tmp/qrimage.png'
+								is_written = cv2.imwrite(qrimage_path, frame)
+								if not is_written:
+									print('image was not saved!')
+								return qrcode.data, qrimage_path
+		
+						# QRコード座標
+						x, y, w, h = qrcode.rect
+
+						# QRコードデータ
+						#dec_inf = qrcode.data.decode('utf-8')
+						#print('QR-decode:', dec_inf)
+						#frame = cv2.putText(frame, dec_inf, (x, y-6), font, .3, (255, 0, 0), 1, cv2.LINE_AA)
+		
+						# バウンディングボックス
+						cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
+		
+				# 画像表示
+				cv2.imshow('pyzbar', frame)
+
+
+			# quit
+			if cv2.waitKey(1) & 0xFF == ord('q'):
+				break
+	except KeyboardInterrupt:
+		return 
+	finally:
+		# キャプチャリソースリリース
+		cap.release()
 
 #
 # Kivy Application
@@ -59,8 +180,8 @@ class mTag(App):
     entries = F.ListProperty()
 
     if POSITION:
-        gps_location = StringProperty()
-        gps_status = StringProperty('Click Start to get GPS location updates')
+        gps_location = F.StringProperty()
+        gps_status = F.StringProperty('Click Start to get GPS location updates')
 
     def __init__(self):
         super().__init__()
@@ -73,16 +194,41 @@ class mTag(App):
             try:
                 gps.configure(on_location=self.on_location,
                               on_status=self.on_status)
-            except NotImplementedError:
-                import traceback
-                traceback.print_exc()
-                self.gps_status = 'GPS is not implemented for your platform'
-
-            if platform == "android":
-                print("gps.py: Android detected. Requesting permissions")
-                self.request_android_permissions()
+            except (NotImplementedError, ModuleNotFoundError):
+                #import traceback
+                #traceback.print_exc()
+                self.gps_status = 'GPS is not implemented on your platform'
+            else:
+                if platform == "android":
+                    print("gps.py: Android detected. Requesting permissions")
+                    self.request_android_permissions()
+                else:
+                    print(f"gps.py: unknown platform `{platform}`")
 
         #return Builder.load_string(kv)
+        Window.bind(on_keyboard=self.onBackBtn)
+
+        print(f"{self.user_data_dir = }")
+
+    def onBackBtn(self, window, key, *args):
+        """ To be called whenever user presses Back/Esc Key """
+        # If user presses Back/Esc Key
+        if key == 27:
+            # Do whatever you need to do, like check if there are any
+            # screens that you can go back to.
+            if self.root.current == 'entries':
+                pass
+            elif self.root.current == 'editor':
+                # TODO prompt to save!
+                self.switch_screen("entries")
+            else:
+                print(self.root.current)
+                #self.switch_screen("editor")
+
+            # return True if you don't want to close app
+            # return False if you do
+            return True
+        return False
 
     def request_android_permissions(self):
         """
@@ -161,27 +307,34 @@ class mTag(App):
             self.load_entries()
         self.root.current = target
 
-    def scan_id(self,otype = None):
-        if otype == None:
-            if self.target_entry['otype'] == 'shelf':
-                print("last item was a shelf.. what now?")
-                self.switch_screen("entries")
-                return
-            elif self.target_entry['otype'] == 'set':
-                otype = 'box'
-            elif self.target_entry['otype'] == 'box':
-                otype = 'part'
-            elif self.target_entry['otype'] == 'part':
-                otype = 'part'
+    #def scan_id(self, get_uuid4=False):
+    def scan_id(self,otype = None, get_uuid4=False):
+        #if otype == None:
+        #    p = F.TypeSelPopup()
+        #    p.open()
+            #if self.target_entry['otype'] == 'shelf':
+            #    print("last item was a shelf.. what now?")
+            #    self.switch_screen("entries")
+            #    return
+            #elif self.target_entry['otype'] == 'set':
+            #    otype = 'box'
+            #elif self.target_entry['otype'] == 'box':
+            #    otype = 'part'
+            #elif self.target_entry['otype'] == 'part':
+            #    otype = 'part'
 
 
-        if platform == 'android':
-            F.ZBarCamPopup().open()
+        if not get_uuid4:
+            if platform == 'android':
+                F.ZBarCamPopup().open()
+            elif platform == 'linux':
+                Clock.schedule_once(lambda *_: self.edit_entry( readQR( settings.video_dev )[0], otype), 2)
+            else:
+                print(f"unkown {platform = }")
         else:
             # temporary hack to simulate scanning a code
             # TODO allow webcam input or manual entry
-            id = str(uuid4())
-            Clock.schedule_once(lambda *_: self.edit_entry(id,otype), 2)
+            Clock.schedule_once(lambda *_: self.edit_entry(enc(str(uuid4())),otype), 2)
         #print('EDITED:',self.target_entry['id'], '(previous value ; this is WRONG!)') # TODO this is the _previous_ id!
         #self.target_entry = get_entry(self.db, entry_id)
 
@@ -214,14 +367,15 @@ class mTag(App):
     def sanitize(qrcontent):
         for u in settings.strprefix:
             qrcontent = qrcontent.lstrip(u)
-        if qrcontent.startswith('http'):
+        if qrcontent.startswith(b'http'):
             parsed = urlparse(qrcontent)
             return f"{parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query}"
         else:
-            return qrcontent.replace('/', '_')
+            return dec( qrcontent.replace(b'/', b'_') )
 
     def export_db(self, *args, button):
         """ TODO this should not exist ; not in this form at least """
+        print("TODO: request suffix/hint for filename")
         if platform == 'android':
             from androidstorage4kivy import SharedStorage, ShareSheet
             from androidstorage4kivy.sharedstorage import MediaStoreDownloads
@@ -267,7 +421,14 @@ class mTag(App):
             print("File chooser not implemented on this platform")
 
     def picture_for(self, target_id, thumbnail = False):
-        #print('PICTURE TARGET',target_id, thumbnail)
+        if target_id == '':
+            return
+        # workaround because can't use binary filename here
+        try:
+            target_id = self.sanitize(target_id)
+        except AttributeError:
+            pass
+
         if THUMBNAILS and thumbnail:
             path = Path(
                 self.user_data_dir,
@@ -298,7 +459,9 @@ class mTag(App):
 
     @mainthread
     def save_picture(self, camera, filename):
+        #print(f"{filename = }")
         rename(filename, self.picture_for(self.target_entry["id"]))
+        #print(f"{self.picture_for(self.target_entry['id']) = }")
 
         # thumbnail generation
         if THUMBNAILS:
@@ -312,7 +475,10 @@ class mTag(App):
         self.root.get_screen("editor").ids.picture.reload()
 
     def snap_picture(self, force = True):
-        ''' snaps a picture ; TODO may be used to open a zoomable image if picture already exists '''
+        ''' snaps a picture ; TODO may be used to open a zoomable image if picture already exists
+
+            force: if True, don't open a zoomable image
+        '''
         target_id = self.target_entry["id"]
         #print('OOPS?',target_id, 'this seems correct')
         if platform == 'android':
@@ -329,39 +495,53 @@ class mTag(App):
                 print("Error: platform support not implemented for photo")
                 #print("Error: platform support not implemented for photo ; debugging only")
                 from random import choice
-                pic = Path(f'/home/meta/naspi/metameta/mtag/{choice([1,2,3])}.jpeg').read_bytes()
-                Path(self.pictures_path / (target_id+'.jpeg')).write_bytes(pic)
-                self.save_picture(None, self.pictures_path / (target_id+'.jpeg'))
+                pic = Path(f'{settings.dummy_image_path}{choice([1,2,3])}.jpeg').read_bytes()
+                #_path = self.pictures_path / self.sanitize(target_id)+'.jpeg'
+                #print(f"{self.pictures_path=} / {dec(target_id)=} +'.jpeg'")
+                #print(f"")
+                Path(self.pictures_path / (self.sanitize(target_id)+'.jpeg')).write_bytes(pic)
+                self.save_picture(None, self.pictures_path / (self.sanitize(target_id)+'.jpeg'))
             else:
                 # open zoomable image popup
                 F.ZoomImagePopup().open()
 
+    def import_file(self):
+        print("TODO open file chooser dialog")
+
     def edit_entry(self, entry_id, otype = None):
         self.target_entry = get_entry(self.db, entry_id)
+        #target_entry = get_entry(self.db, entry_id)
+        #print(f"{target_entry = }")
+        #self.target_entry = target_entry
         #print("EDIT:",self.target_entry['id'])
         #print('DATA:',self.target_entry['text_fields'])
 
         if otype is None:
             for t in self.target_entry['text_fields']:
-                if t['rune'] == 'Ingwaz' and t['key'] == 'ch.ju.sauser-frères':
+                if t['rune'] == 'Ingwaz' and t['key'] == settings.prefix: # TODO configurable in GUI
                     otype = t['value']
+                    # TODO otype.append( t['value'] )
                     break
+        #print("TYPE:",otype)
         self.target_entry['otype'] = otype
-        #print("TYPE:",self.target_entry['otype'])
 
-        if otype == 'shelf':
-            self.shelf_id = entry_id
-        elif otype == 'set':
-            self.set_id = entry_id
+        #if otype == 'shelf':
+        #    self.shelf_id = entry_id
+        #elif otype == 'set':
+        #    self.set_id = entry_id
 
         self.switch_screen("editor")
 
     def edit_text_field(self, index=None):
         data = self.target_entry["text_fields"][index] if index is not None else {}
+        print(f"{self.target_entry = }")
         p = F.TextFieldEditPopup(
+            title=dec(self.target_entry['id']),
             index=index,
-            key=data.get('key', ""),
-            value=data.get('value', ""),
+            #key=data.get('key', ""),
+            key=enc(data.get('key', "")),
+            #value=data.get('value', ""),
+            value=enc(data.get('value', "")),
         )
         p.open()
 
@@ -373,15 +553,16 @@ class mTag(App):
 
         # making sure we have all the required values
         required_props = []
-        for prop in settings.presetkeys[otype]:
-            print(f"{otype}: requesting property {prop[2]}")
-            required_props.append(prop[2])
-        for entry in self.target_entry['text_fields']:
-            try:
-                required_props.remove(entry['key'])
-                print(f"found property '{entry['key']}'")
-            except ValueError:
-                pass
+        if otype is not None:   # TODO otype must be a list!
+            for prop in settings.presetkeys[otype]:
+                print(f"{otype}: requesting property {prop[2]}")
+                required_props.append(prop[2])
+            for entry in self.target_entry['text_fields']:
+                try:
+                    required_props.remove(entry['key'])
+                    print(f"found property '{entry['key']}'")
+                except ValueError:
+                    pass
         for prop in required_props:
             errors.append(f"ERROR: '{prop}' is not set when it should be")
 
@@ -427,7 +608,7 @@ class mTag(App):
             self.switch_screen("entries")
 
     def save_text_field(self, rune=None, index=None, key="", value=""):
-        data = {'rune': rune, 'key': key, 'value': value}
+        data = {'rune': rune, 'key': enc(key), 'value': enc(value)}
         text_fields = self.target_entry["text_fields"][:]
         if index is not None:
             text_fields[index] = data
@@ -458,6 +639,8 @@ class mTag(App):
         except ValueError:
             # not in list
             field.text = settings.presetkeys[otype][0][2]
+        except KeyError:
+            pass
         except Exception as e:
             if str(e) == "MatchFound":
                 if i == len(settings.presetkeys[otype])-1:

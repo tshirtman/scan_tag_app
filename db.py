@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     create_engine,
     delete,
@@ -28,9 +29,9 @@ logger = logging.getLogger(__name__)
 class TextField(Base):
     __tablename__ = 'textfield'
 
-    key = Column(String, primary_key=True)
-    entry_id = Column(String, ForeignKey('entry.id'), primary_key=True)
-    value = Column(String)
+    entry_id = Column(LargeBinary, ForeignKey('entry.id'), primary_key=True)
+    key = Column(LargeBinary, primary_key=True)
+    value = Column(LargeBinary)
     rune = Column(String)
     entry = relationship("Entry", back_populates='fields')
 
@@ -38,7 +39,7 @@ class TextField(Base):
 class Entry(Base):
     __tablename__ = 'entry'
 
-    id = Column(String, primary_key=True)
+    id = Column(LargeBinary, primary_key=True)
     created = Column(DateTime(timezone=True))
     updated = Column(DateTime(timezone=True))
     deleted = Column(Boolean, default=False)
