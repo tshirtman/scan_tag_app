@@ -60,11 +60,11 @@ if platform == 'linux':
 	
 									cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
 		
-									qrimage_path = '/tmp/qrimage.png'
-									is_written = cv2.imwrite(qrimage_path, frame)
-									if not is_written:
-										print('ERROR: image could not be saved to {qrimage_path}!')
-									return qrcode.data, qrimage_path
+									#qrimage_path = '/tmp/qrimage.png'
+									#is_written = cv2.imwrite(qrimage_path, frame)
+									#if not is_written:
+									#	print('ERROR: image could not be saved to {qrimage_path}!')
+									return qrcode.data#, qrimage_path
 			
 							# QRコード座標
 							x, y, w, h = qrcode.rect
@@ -363,7 +363,7 @@ class mTag(App):
 			elif platform == 'linux':
 				_qr = readQR( settings.video_dev )
 				if _qr is not None:
-					Clock.schedule_once(lambda *_: self.edit_entry( _qr[0], otype), 2)
+					Clock.schedule_once(lambda *_: self.edit_entry( _qr, otype), 2)
 			else:
 				print(f"unkown {platform = }")
 		else:
@@ -436,7 +436,7 @@ class mTag(App):
 			Path(self.db_path).unlink()
 			self.db = get_engine(self.db_path)
 		else:
-			print("Error: platform support uncomplete")
+			print("Warning: platform support uncomplete?")
 			print(self.db_path)
 			print(self.pictures_path)
 			zip_file = Path('/tmp', f'export-{datetime.now().isoformat()}.zip')
@@ -568,13 +568,14 @@ class mTag(App):
 		print("TODO open file chooser dialog")
 
 	def edit_entry(self, entry_id, otype = None):
-		print(f"{type(entry_id) =}")
-		if type(entry_id) is ZBarSymbol:
-			entry_id = entry_id.data[0]
-			if type(entry_id) is str:
-				print("converting ZBarSymbol string data to bytes")
-				entry_id = enc(entry_id)
-			print(f"lost some data {entry_id[1] = }, {type(entry_id[1])}")
+		try:
+			entry_id = entry_id.data	# namedtuple: zbarcam.zbarcam.Symbol
+		except AttributeError:
+			entry_id = entry_id			# just the content (platform='linux')
+		if type(entry_id) is str:
+			print("converting machine-code 'string' data to 'bytes'")
+			entry_id = enc(entry_id)
+		#print(f"lost some data {entry_id[1] = }, {type(entry_id[1])}")
 		self.target_entry = get_entry(self.db, entry_id)
 		#target_entry = get_entry(self.db, entry_id)
 		#print(f"{target_entry = }")
