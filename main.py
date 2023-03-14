@@ -278,26 +278,28 @@ class mTag(App):
 
     def GPSstart(self, minTime, minDistance, widget = None):
         if ( self.gps_status == 'pre-init' and self.GPSinit() ) or \
-             self.gps_status != msg_nogps:
+            self.gps_status not in ( msg_nogps, 'pre-init', ):
             try:
                 gps.start(minTime, minDistance)
             except NotImplementedError:
-                self.gps_location = "NotImplementedError"
+                self.gps_location = msg_nogps
                 widget.text = msg_nogps
         else:
-                widget.state = "normal"
-                widget.text = msg_nogps
+            widget.state = "normal"
+            widget.text = msg_nogps
 
     def GPSstop(self):
-        try:
-            gps.stop()
-        except NotImplementedError:
-            self.gps_location = "NotImplementedError"
+        if self.gps_status not in ( msg_nogps, 'pre-init', ):
+            try:
+                gps.stop()
+            except NotImplementedError:
+                self.gps_location = msg_nogps
 
     @mainthread
     def on_location(self, **kwargs):
         self.gps_location = '\n'.join([
             '{}={}'.format(k, v) for k, v in kwargs.items()])
+        print(f"{self.gps_location = }")
 
     @mainthread
     def on_status(self, stype, status):

@@ -49,6 +49,7 @@ requirements =
     Pillow,
     xcamera==2020.613,
     androidstorage4kivy,
+    gi,
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes

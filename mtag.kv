@@ -136,6 +136,8 @@ ScreenManager:
 				default_size_hint: 1, None
 				default_size: 0, wheight
 		BoxLayout:
+			height: wheight
+			size_hint_y: None
 			DataExportButton:
 			ReadPositionButton:
 
@@ -286,12 +288,12 @@ ScreenManager:
 
 <DataExportButton@AppButton>:
 	text: "export\nDB"
-	size_hint_x: None
+	size_hint: None, None
 	width: wheight
 	on_release: app.export_db( button = self )	# TODO ask for confirmation
 
 <ReadPositionButton@ToggleButton>:
-	text: 'GPS' if self.state == 'normal' else 'acquiring...'
+	text: 'GPS is off' if self.state == 'normal' else 'acquiring satellites...'
 	size_hint: 1, None
 	height: wheight
 	on_state:
