@@ -147,7 +147,7 @@ ScreenManager:
 		#print('EDITING ID:' , self.id)
 		app.edit_entry(self.id)
 	Image:
-		source: app.picture_for(root.otype, thumbnail = True)
+		source: app.picture_for(root.otype, thumbnail = True, clue='TypeRow thumbail')
 		size_hint_x: None
 		width: root.height
 	Label:
@@ -178,7 +178,7 @@ ScreenManager:
 		print('open:' , dec(self.id))
 		app.edit_entry(self.id)
 	Image:
-		source: app.picture_for(root.id, thumbnail = True)
+		source: app.picture_for(root.id, thumbnail = True )#, clue='EntryRow thumbail')
 		size_hint_x: None
 		width: root.height
 	Label:
@@ -338,11 +338,11 @@ ScreenManager:
 	height: Wheight
 	on_release: app.choose_file(self)
 
-<EditPictureButton@Button>:
-	text: 'edit photo'
-	size_hint: 1, None
-	height: Wheight
-	on_release: print("Not implemented : edit/crop") #TODO see ShareSheet on https://github.com/Android-for-Python/androidstorage4kivy
+#<EditPictureButton@Button>:
+#	text: 'edit photo'
+#	size_hint: 1, None
+#	height: Wheight
+#	on_release: print("Not implemented : edit/crop") #TODO see ShareSheet on https://github.com/Android-for-Python/androidstorage4kivy
 
 <PictureButton@Button>:
 	text: "📷 photo"
@@ -424,7 +424,7 @@ ScreenManager:
 				size: image.size
 				Image:
 					id: image
-					source: app.picture_for((app.target_entry).get("id"))
+					source: app.picture_for((app.target_entry).get("id"))#,clue='ZoomImagePopup')
 					size: self.texture_size
 		Button:
 			size_hint_y: None
@@ -470,7 +470,7 @@ ScreenManager:
 
 		ZoomableImage:
 			id: picture
-			source: app.picture_for(root.item_id)
+			source: app.picture_for(root.item_id, clue="ZoomableImage")
 			
 		EditableEntriesList:
 			entries: (app.target_entry).get("text_fields", [])

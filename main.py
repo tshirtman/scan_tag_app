@@ -18,6 +18,7 @@ from kivy.clock import Clock, mainthread
 from kivy.resources import resource_add_path
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
+from kivy.uix.image import Image as KivyImage
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.core.window import Window
@@ -459,14 +460,16 @@ class mTag(App):
 		else:
 			print("File chooser not implemented on this platform")
 
-	def picture_for(self, target_id, thumbnail = False):
+	def picture_for(self, target_id, thumbnail = False, clue = None):
 		if target_id == '':
 			return
+		if clue: print(f"{clue} before: {target_id = }")
 		# workaround because can't use binary filename here
 		try:
 			target_id = self.sanitize(target_id)
 		except AttributeError:
 			pass
+		if clue: print(f"{clue} after: {target_id = }")
 
 		if THUMBNAILS and thumbnail:
 			path = Path(
@@ -498,19 +501,36 @@ class mTag(App):
 
 	@mainthread
 	def save_picture(self, camera, filename):
-		#print(f"{filename = }")
-		rename(filename, self.picture_for(self.target_entry["id"]))
-		#print(f"{self.picture_for(self.target_entry['id']) = }")
+		#final_path = self.picture_for(self.target_entry["id"], clue="save_picture()")
+		#print('???',final_path, filename)	# same same!!
+		#rename(filename, final_path)
 
 		# thumbnail generation
 		if THUMBNAILS:
+			thumbnail_path = str(filename).replace(settings.bindir,settings.thumbdir)
 			from PIL import Image
 			im = Image.open(filename)
 			im = im.resize(settings.thumbsize)
 			im.save( str(filename).replace(settings.bindir,settings.thumbdir) )
 			im.close()
+			#print(f"saved thumbnail to {thumbnail_path}")
+			# same same... but only for one! 
+			#self.root.get_screen("editor").ids.picture.source = thumbnail_path)
+			#help(self.root.get_screen("editor") )
+			
+			for w in self.root.get_screen("entries").walk():
+				if type(w) is EntryRow and w.id == self.target_entry["id"]:
+					#print(f"{w = }")
+					for ww in w.walk():
+						#print(f"{ww = } {type(ww) = }")
+						if type(ww) is KivyImage:
+							ww.source = thumbnail_path
+							ww.reload()
+							#print("reload done",ww)
+							break
 
-		self.root.get_screen("editor").ids.picture.source = self.picture_for(self.target_entry["id"])
+		#print(filename, type(filename))
+		self.root.get_screen("editor").ids.picture.source = str(filename)
 		self.root.get_screen("editor").ids.picture.reload()
 
 	def snap_picture(self, force = True):
@@ -531,7 +551,7 @@ class mTag(App):
 			if force:
 				# TODO allow other platforms ; ie for linux
 				# https://github.com/ValentinDumas/KivyCam
-				print("Error: platform support not implemented for photo")
+				print("Info: no photo suport for this platform ; using dummy images")
 				#print("Error: platform support not implemented for photo ; debugging only")
 				from random import choice
 				pic = Path(f'{settings.dummy_image_path}{choice([1,2,3])}.jpeg').read_bytes()
@@ -548,6 +568,7 @@ class mTag(App):
 		print("TODO open file chooser dialog")
 
 	def edit_entry(self, entry_id, otype = None):
+		print(f"{type(entry_id) =}")
 		if type(entry_id) is ZBarSymbol:
 			entry_id = entry_id.data[0]
 			if type(entry_id) is str:
@@ -574,6 +595,10 @@ class mTag(App):
 		#	self.shelf_id = entry_id
 		#elif otype == 'set':
 		#	self.set_id = entry_id
+
+		final_path = self.picture_for(self.target_entry["id"])#, clue="save_picture()")
+		self.root.get_screen("editor").ids.picture.source = final_path
+		self.root.get_screen("editor").ids.picture.reload()
 
 		self.switch_screen("editor")
 
