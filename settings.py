@@ -53,5 +53,5 @@ encoding = 'utf-8'
 prefix = b'ch.engrenage'
 # UNIX
 video_dev = '/dev/video0'
-dummy_image_path = '/storage0/naspi/metameta/mtag/'
+dummy_image_path = '/storage0/naspi/metameta/mtag/data/'
 export_dir = '/tmp/'

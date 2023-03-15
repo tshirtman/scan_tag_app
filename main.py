@@ -27,6 +27,10 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.utils import platform
 
+# seems not necessary
+#from kivy.config import Config
+#Config.set('kivy','window_icon','data/icon.png')
+
 if platform == 'linux':
 	# don't know how to set the requirement in buildoer.spec.. mostly for getting rid of a warning anyway
 	import gi
@@ -144,8 +148,8 @@ class TypeSelPopup(F.Popup):
 	otypes = F.DictProperty()
 
 
-class LoadDialog(FloatLayout):
-	load = ObjectProperty(None)
+class ImportDialog(FloatLayout):
+	callback = ObjectProperty(None)
 	button = ObjectProperty(None)
 	popup = ObjectProperty(None)
 
@@ -208,6 +212,7 @@ class oType:
 class mTag(App):
 	target_entry = F.DictProperty()
 	entries = F.ListProperty()
+	icon = 'data/icon.png'
 
 	if POSITION:
 		gps_location = F.StringProperty()
@@ -481,7 +486,7 @@ class mTag(App):
 			file_sel = Chooser()
 			print(f"{file_sel = } (nothing done yet)")
 		else:
-			content = LoadDialog(load=self.import_file, button=button)
+			content = ImportDialog(callback=self.import_file, button=button)
 			_popup = Popup(title=msg_select_file, content=content,
 								size_hint=(0.9, 0.9))
 			content.popup = _popup
@@ -591,7 +596,7 @@ class mTag(App):
 				p = Path(self.pictures_path / (self.sanitize(target_id)+'.jpeg'))
 				is_written = cv2.imwrite(str(p), frame)
 				self.save_picture(p)
-				print(f"image {'successfully' if is_written else 'was NOT'} saved to {p}")
+				#print(f"image {'successfully' if is_written else 'was NOT'} saved to {p}")
 			finally:
 				# キャプチャリソースリリース
 				cap.release()
@@ -713,7 +718,8 @@ class mTag(App):
 				self.save_text_field( 'Ingwaz', None, 'ch.ju.sauser-frères', 'part' )
 				self.save_text_field( 'Isaz', None, 'box', self.box_id )
 				self.save_text_field( 'Isaz', None, 'set', self.set_id )
-			save_entry(self.db, self.target_entry)  # TODO why is this needed here? it's already called by save_text_field()
+			#save_entry(self.db, self.target_entry)  # TODO why is this needed here? it's already called by save_text_field()
+
 			self.switch_screen("entries")
 
 	def save_text_field(self, rune=None, index=None, key="", value=""):

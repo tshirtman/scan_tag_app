@@ -479,7 +479,7 @@ ScreenManager:
 			AddButton:
 				on_release: app.edit_text_field()
 		
-<LoadDialog>:
+<ImportDialog>:
     BoxLayout:
         size: root.size
         pos: root.pos
@@ -495,7 +495,7 @@ ScreenManager:
                 on_release: root.dismiss()
 
             Button:
-                text: "Load"
+                text: "Import"
                 on_release: app.import_file(filechooser.path, filechooser.selection, popup=root.popup)
 
 #<SaveDialog>:
