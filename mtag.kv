@@ -27,7 +27,7 @@ ScreenManager:
 		orientation: "vertical"
 		ZBarCam:
 			id: zbarcam
-			on_symbols: app.edit_entry(self.symbols[0]) if self.symbols else None
+			on_symbols: app.edit_entry(self.symbols[0], popup = self) if self.symbols else None
 		#RecycleView:
 		#	viewclass: "ZBarSelectButton"
 		#	data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
@@ -178,7 +178,7 @@ ScreenManager:
 		print('open:' , dec(self.id))
 		app.edit_entry(self.id)
 	Image:
-		source: app.picture_for(root.id, thumbnail = True )#, clue='EntryRow thumbail')
+		source: app.picture_for(root.id, thumbnail = True, clue='EntryRow thumbail')
 		size_hint_x: None
 		width: root.height
 	Label:
@@ -351,13 +351,6 @@ ScreenManager:
 	on_release: app.snap_picture()
 	background_color: (0,0,1,1)
 
-<FileButton@Button>:
-	text: "file"
-	size_hint: 2, None
-	height: Wheight
-	on_release: app.import_file()
-	background_color: (0,0,1,1)
-
 <AddButton@Button>:
 	text: "+k/v"
 	size_hint_x: 1
@@ -424,7 +417,7 @@ ScreenManager:
 				size: image.size
 				Image:
 					id: image
-					source: app.picture_for((app.target_entry).get("id"))#,clue='ZoomImagePopup')
+					source: app.picture_for((app.target_entry).get("id",b"[ZoomImagePopup]"),clue='ZoomImagePopup')
 					size: self.texture_size
 		Button:
 			size_hint_y: None
@@ -440,33 +433,30 @@ ScreenManager:
 
 <EntryEditor@Screen>:
 	name: "editor"
-	item_id: (app.target_entry).get("id_str", "")
+	item_id: (app.target_entry).get("id", b"[entryeditor]")
 
 	BoxLayout:
 		orientation: "vertical"
 		padding: "10dp"
 		spacing: "10dp"
 		Label:
-			text: root.item_id or ""
+			text: dec(root.item_id) or ""
 			size_hint_y: None
 			height: self.texture_size[1]
 
 #		Label:
 #			text: (app.target_entry).get("otype", "object type")
 #			size_hint_y: None
-			height: self.texture_size[1]
+#			height: self.texture_size[1]
 
 		BoxLayout:
 			size_hint_y: None
 			height: Wheight
 			#ExternalAppButton:
-			#FileChooserButton:
 			#EditPictureButton:
-		  # TODO
 			PictureButton:
 				take_picture: picture
-			FileButton:
-
+			FileChooserButton:
 
 		ZoomableImage:
 			id: picture
@@ -489,3 +479,51 @@ ScreenManager:
 			AddButton:
 				on_release: app.edit_text_field()
 		
+<LoadDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+
+        BoxLayout:
+            size_hint_y: None
+            height: wheight
+            Button:
+                text: "Cancel"
+                on_release: root.dismiss()
+
+            Button:
+                text: "Load"
+                on_release: app.import_file(filechooser.path, filechooser.selection, popup=root.popup)
+
+#<SaveDialog>:
+#    text_input: text_input
+#    BoxLayout:
+#        size: root.size
+#        pos: root.pos
+#        orientation: "vertical"
+#        FileChooserListView:
+#            id: filechooser
+#            on_selection: text_input.text = self.selection and self.selection[0] or ''
+#
+#        TextInput:
+#            id: text_input
+#            size_hint_y: None
+#            height: wheight
+#            multiline: False
+#
+#        BoxLayout:
+#            size_hint_y: None
+#            height: 30
+#            Button:
+#                text: "Cancel"
+#                on_release: self.dismiss()
+#
+#            Button:
+#                text: "Save"
+#                on_release: root.save(filechooser.path, text_input.text)
+#
+
+

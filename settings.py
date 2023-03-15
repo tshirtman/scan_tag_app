@@ -34,10 +34,24 @@ presetkeys = {
 #    oType('Motor, asynchronous', {'Ansuz': ['Number of coils','Max voltage','Power [W]','RPM']}),
 #]
 
+known_protocols = (
+    b'http://',    b'https://',
+    b'ftp://',
+    b'sftp://',
+    b'ssh://',
+    b'smtp://',
+    b'telnet://',
+    b'pop3://',
+    b'imap://',    b'imaps://',
+    b'irc://',
+    b'torrent://',
+    b'rsync://',
+)
+
 encoding = 'utf-8'
 # general settigs
 prefix = b'ch.engrenage'
 # UNIX
 video_dev = '/dev/video0'
 dummy_image_path = '/storage0/naspi/metameta/mtag/'
-
+export_dir = '/tmp/'

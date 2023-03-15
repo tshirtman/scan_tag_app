@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # vim: noet ts=4 number nowrap
 
-print("alpha")
+from messages import *	# localization
+
+rune_otype = 'Ingwaz'
 
 from pathlib import Path
 from uuid import uuid4
@@ -11,17 +13,19 @@ from os.path import join
 from zipfile import ZipFile
 from datetime import datetime
 
-from kivy.utils import platform
 from kivy.app import App
-from kivy.factory import Factory as F
 from kivy.clock import Clock, mainthread
+from kivy.core.window import Window
+from kivy.factory import Factory as F
+from kivy.properties import ObjectProperty
 from kivy.resources import resource_add_path
-from kivy.uix.popup import Popup
-from kivy.uix.label import Label
-from kivy.uix.image import Image as KivyImage
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
-from kivy.core.window import Window
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.image import Image as KivyImage
+from kivy.uix.label import Label
+from kivy.uix.popup import Popup
+from kivy.utils import platform
 
 if platform == 'linux':
 	# don't know how to set the requirement in buildoer.spec.. mostly for getting rid of a warning anyway
@@ -123,12 +127,11 @@ logger = logging.getLogger(__name__)
 
 
 class EntryRow(F.ButtonBehavior, F.BoxLayout):
-	id_str = F.StringProperty()
 	id = F.ObjectProperty()
 
-class TypeRow(F.ButtonBehavior, F.BoxLayout):
-	otype = F.StringProperty()
-	otype_bytes = F.ObjectProperty()
+#class TypeRow(F.ButtonBehavior, F.BoxLayout):
+#	otype = F.StringProperty()
+#	otype_bytes = F.ObjectProperty()
 
 
 class TextFieldEditPopup(F.Popup):
@@ -139,6 +142,19 @@ class TextFieldEditPopup(F.Popup):
 
 class TypeSelPopup(F.Popup):
 	otypes = F.DictProperty()
+
+
+class LoadDialog(FloatLayout):
+	load = ObjectProperty(None)
+	button = ObjectProperty(None)
+	popup = ObjectProperty(None)
+
+#class SaveDialog(FloatLayout):
+#    save = ObjectProperty(None)
+#    text_input = ObjectProperty(None)
+#    cancel = ObjectProperty(None)
+
+
 
 class oType:
 	def __init__(self, name, props = None):
@@ -363,7 +379,9 @@ class mTag(App):
 			elif platform == 'linux':
 				_qr = readQR( settings.video_dev )
 				if _qr is not None:
-					Clock.schedule_once(lambda *_: self.edit_entry( _qr, otype), 2)
+					# Clock is optional there
+					#Clock.schedule_once(lambda *_: self.edit_entry( _qr, otype), 2)
+					self.edit_entry( _qr, otype)
 			else:
 				print(f"unkown {platform = }")
 		else:
@@ -401,13 +419,13 @@ class mTag(App):
 		""" TODO set text input field to content of next QR code (open popup) ; set focus to next input field """
 
 	def delete_entry(self):
-		print(self.target_entry)
+		print(f"TODO: would delete {self.target_entry}")
 
 	@staticmethod
 	def sanitize(qrcontent):
 		for u in settings.strprefix:
 			qrcontent = qrcontent.lstrip(u)
-		if qrcontent.startswith(b'http'):
+		if qrcontent.startswith(settings.known_protocols):
 			parsed = urlparse(qrcontent)
 			return f"{parsed.netloc}_{parsed.path.replace('/', '_')}_{parsed.params}_{parsed.query}"
 		else:
@@ -429,17 +447,13 @@ class mTag(App):
 					zf.write(picture)
 					Path(picture).unlink()
 
-			print(f"export complete: {zip_file} {zip_file.exists()}")
 			shared_path = ss.copy_to_shared(str(zip_file))
 			ShareSheet().share_file(shared_path)
 
 			Path(self.db_path).unlink()
 			self.db = get_engine(self.db_path)
 		else:
-			print("Warning: platform support uncomplete?")
-			print(self.db_path)
-			print(self.pictures_path)
-			zip_file = Path('/tmp', f'export-{datetime.now().isoformat()}.zip')
+			zip_file = Path(settings.export_dir, f'export-{datetime.now().isoformat()}.zip')
 			with ZipFile(zip_file, mode="w") as zf:
 				zf.write(self.db_path)
 				for picture in self.pictures_path.rglob('*.jpeg'):
@@ -448,36 +462,64 @@ class mTag(App):
 			Path(self.db_path).unlink()
 			self.db = get_engine(self.db_path)
 			button.background_color = (.2,.2,.2)
+		print(f"export {'complete' if zip_file.exists() else 'failed'}: {zip_file}")
 		self.load_entries()
 
 	def call_app(self, button):
 		print("Not implemented : call_app()")
 
+    #def show_save(self):
+    #    content = SaveDialog(save=self.save, cancel=self.dismiss_popup)
+    #    self._popup = Popup(title="Save file", content=content,
+    #                        size_hint=(0.9, 0.9))
+    #    self._popup.open()
+
 	def choose_file(self, button):
+		""" button: widget used to trigger function, so we have a backref """
 		if platform == 'android':
 			from androidstorage4kivy import Chooser
 			file_sel = Chooser()
+			print(f"{file_sel = } (nothing done yet)")
 		else:
-			print("File chooser not implemented on this platform")
+			content = LoadDialog(load=self.import_file, button=button)
+			_popup = Popup(title=msg_select_file, content=content,
+								size_hint=(0.9, 0.9))
+			content.popup = _popup
+			_popup.open()
+
+	def import_file(self, path, selection, popup = None):
+		print(f"TODO: would import '{path}' with_sel: {selection}")
+		if popup is not None:
+			popup.dismiss()
 
 	def picture_for(self, target_id, thumbnail = False, clue = None):
-		if target_id == '':
-			return
+		print(f"picture_for() {target_id = } {type(target_id)}")
 		if clue: print(f"{clue} before: {target_id = }")
+
+		match target_id:
+			case b'[entryeditor]':
+				return
+			case "":
+				print("ERROR empty target id! (and it's a string)")
+				return
+
 		# workaround because can't use binary filename here
 		try:
 			target_id = self.sanitize(target_id)
 		except AttributeError:
 			pass
+
 		if clue: print(f"{clue} after: {target_id = }")
 
 		if THUMBNAILS and thumbnail:
+			print(f"photo: THUMBNAIL {target_id}")
 			path = Path(
 				self.user_data_dir,
 				settings.thumbdir,
 				target_id or '_'
 			).with_suffix(".jpeg")
 		else:
+			print(f"photo: FULLSIZE {target_id}")
 			path = Path(
 				self.user_data_dir,
 				settings.bindir,
@@ -564,10 +606,7 @@ class mTag(App):
 				# open zoomable image popup
 				F.ZoomImagePopup().open()
 
-	def import_file(self):
-		print("TODO open file chooser dialog")
-
-	def edit_entry(self, entry_id, otype = None):
+	def edit_entry(self, entry_id, otype = None, popup = None):
 		try:
 			entry_id = entry_id.data	# namedtuple: zbarcam.zbarcam.Symbol
 		except AttributeError:
@@ -582,10 +621,12 @@ class mTag(App):
 		#self.target_entry = target_entry
 		#print("EDIT:",self.target_entry['id'])
 		#print('DATA:',self.target_entry['text_fields'])
+		if popup is not None:
+			popup.dismiss()
 
 		if otype is None:
 			for t in self.target_entry['text_fields']:
-				if t['rune'] == 'Ingwaz' and t['key'] == settings.prefix: # TODO configurable in GUI
+				if t['rune'] == rune_otype and t['key'] == settings.prefix: # TODO configurable in GUI
 					otype = t['value']
 					# TODO otype.append( t['value'] )
 					break
@@ -597,8 +638,8 @@ class mTag(App):
 		#elif otype == 'set':
 		#	self.set_id = entry_id
 
-		final_path = self.picture_for(self.target_entry["id"])#, clue="save_picture()")
-		self.root.get_screen("editor").ids.picture.source = final_path
+		#final_path = self.picture_for(self.target_entry["id"])#, clue="save_picture()")
+		#self.root.get_screen("editor").ids.picture.source = final_path
 		self.root.get_screen("editor").ids.picture.reload()
 
 		self.switch_screen("editor")
