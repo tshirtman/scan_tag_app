@@ -178,7 +178,7 @@ ScreenManager:
 		print('open:' , dec(self.id))
 		app.edit_entry(self.id)
 	Image:
-		source: app.picture_for(root.id, thumbnail = True, clue='EntryRow thumbail')
+		source: app.picture_for(root.id, thumbnail = True)#, clue='EntryRow thumbail')
 		size_hint_x: None
 		width: root.height
 	Label:
@@ -417,7 +417,7 @@ ScreenManager:
 				size: image.size
 				Image:
 					id: image
-					source: app.picture_for((app.target_entry).get("id",b"[ZoomImagePopup]"),clue='ZoomImagePopup')
+					source: app.picture_for((app.target_entry).get("id",b"[ZoomImagePopup]"))#,clue='ZoomImagePopup')
 					size: self.texture_size
 		Button:
 			size_hint_y: None
@@ -460,7 +460,7 @@ ScreenManager:
 
 		ZoomableImage:
 			id: picture
-			source: app.picture_for(root.item_id, clue="ZoomableImage")
+			source: app.picture_for(root.item_id)#, clue="ZoomableImage")
 			
 		EditableEntriesList:
 			entries: (app.target_entry).get("text_fields", [])

@@ -493,15 +493,21 @@ class mTag(App):
 			popup.dismiss()
 
 	def picture_for(self, target_id, thumbnail = False, clue = None):
-		print(f"picture_for() {target_id = } {type(target_id)}")
+		#print(f"picture_for() {target_id = } {type(target_id)}")
 		if clue: print(f"{clue} before: {target_id = }")
 
-		match target_id:
-			case b'[entryeditor]':
-				return
-			case "":
-				print("ERROR empty target id! (and it's a string)")
-				return
+		# python 3.10
+		#match target_id:
+		#	case b'[entryeditor]':
+		#		return
+		#	case "":
+		#		print("ERROR empty target id! (and it's a string)")
+		#		return
+		# python 3.9
+		if target_id in (b'[entryeditor]',):
+			return
+		elif target_id == "":
+			print("ERROR empty target id! (and it's a string)", clue)
 
 		# workaround because can't use binary filename here
 		try:
@@ -512,41 +518,34 @@ class mTag(App):
 		if clue: print(f"{clue} after: {target_id = }")
 
 		if THUMBNAILS and thumbnail:
-			print(f"photo: THUMBNAIL {target_id}")
+			#print(f"photo: THUMBNAIL {target_id}")
 			path = Path(
 				self.user_data_dir,
 				settings.thumbdir,
 				target_id or '_'
 			).with_suffix(".jpeg")
 		else:
-			print(f"photo: FULLSIZE {target_id}")
+			#print(f"photo: FULLSIZE {target_id}")
 			path = Path(
 				self.user_data_dir,
 				settings.bindir,
 				target_id or '_'
 			).with_suffix(".jpeg")
 
-		if THUMBNAILS:
-			if path.exists():
-				return str(path)
-			else:
-				# TODO this file doesn't exist by default... manual copy needed at this stage ; ideally it's compiled in-app
-				return str(
-					Path(
-						self.user_data_dir,
-						settings.thumbdir,
-						'_'
-					).with_suffix(".jpeg")
-				)
-		else:
+		if path.exists():
 			return str(path)
+		else:
+			# TODO this file doesn't exist by default... manual copy needed at this stage ; ideally it's compiled in-app
+			return str(
+				Path(
+					self.user_data_dir,
+					settings.thumbdir,
+					'_'
+				).with_suffix(".jpeg")
+			)
 
 	@mainthread
-	def save_picture(self, camera, filename):
-		#final_path = self.picture_for(self.target_entry["id"], clue="save_picture()")
-		#print('???',final_path, filename)	# same same!!
-		#rename(filename, final_path)
-
+	def save_picture(self, filename):
 		# thumbnail generation
 		if THUMBNAILS:
 			thumbnail_path = str(filename).replace(settings.bindir,settings.thumbdir)
@@ -555,56 +554,54 @@ class mTag(App):
 			im = im.resize(settings.thumbsize)
 			im.save( str(filename).replace(settings.bindir,settings.thumbdir) )
 			im.close()
-			#print(f"saved thumbnail to {thumbnail_path}")
-			# same same... but only for one! 
-			#self.root.get_screen("editor").ids.picture.source = thumbnail_path)
-			#help(self.root.get_screen("editor") )
 			
-			for w in self.root.get_screen("entries").walk():
-				if type(w) is EntryRow and w.id == self.target_entry["id"]:
-					#print(f"{w = }")
-					for ww in w.walk():
-						#print(f"{ww = } {type(ww) = }")
-						if type(ww) is KivyImage:
-							ww.source = thumbnail_path
-							ww.reload()
-							#print("reload done",ww)
-							break
+		for w in self.root.get_screen("entries").walk():
+			if type(w) is EntryRow and w.id == self.target_entry["id"]:
+				for ww in w.walk():
+					if type(ww) is KivyImage:
+						ww.source = thumbnail_path
+						ww.reload()
+						break
 
-		#print(filename, type(filename))
 		self.root.get_screen("editor").ids.picture.source = str(filename)
 		self.root.get_screen("editor").ids.picture.reload()
 
 	def snap_picture(self, force = True):
 		''' snaps a picture ; TODO may be used to open a zoomable image if picture already exists
 
-			force: if True, don't open a zoomable image
+			force: if True, never open a zoomable image
 		'''
 		target_id = self.target_entry["id"]
-		#print('OOPS?',target_id, 'this seems correct')
-		if platform == 'android':
-			if force:
-				# take new photo
-				F.XCameraPopup().open()
+		if not force:
+			# open zoomable image (not used atm)
+			F.ZoomImagePopup().open()
+		elif platform == 'android':
+			# take new photo
+			F.XCameraPopup().open()
+		elif platform == 'linux':
+			cap = cv2.VideoCapture(settings.video_dev, cv2.CAP_DSHOW)
+			cap.open(settings.video_dev)
+			try:
+				while cap.isOpened():
+					ret, frame = cap.read()
+					break
+			except KeyboardInterrupt:
+				return 
 			else:
-				# open zoomable image popup
-				F.ZoomImagePopup().open()
+				p = Path(self.pictures_path / (self.sanitize(target_id)+'.jpeg'))
+				is_written = cv2.imwrite(str(p), frame)
+				self.save_picture(p)
+				print(f"image {'successfully' if is_written else 'was NOT'} saved to {p}")
+			finally:
+				# キャプチャリソースリリース
+				cap.release()
 		else:
-			if force:
-				# TODO allow other platforms ; ie for linux
-				# https://github.com/ValentinDumas/KivyCam
-				print("Info: no photo suport for this platform ; using dummy images")
-				#print("Error: platform support not implemented for photo ; debugging only")
-				from random import choice
-				pic = Path(f'{settings.dummy_image_path}{choice([1,2,3])}.jpeg').read_bytes()
-				#_path = self.pictures_path / self.sanitize(target_id)+'.jpeg'
-				#print(f"{self.pictures_path=} / {dec(target_id)=} +'.jpeg'")
-				#print(f"")
-				Path(self.pictures_path / (self.sanitize(target_id)+'.jpeg')).write_bytes(pic)
-				self.save_picture(None, self.pictures_path / (self.sanitize(target_id)+'.jpeg'))
-			else:
-				# open zoomable image popup
-				F.ZoomImagePopup().open()
+			# all (?) platforms https://github.com/ValentinDumas/KivyCam
+			print("Info: no photo suport for this platform ; using dummy images")
+			from random import choice
+			pic = Path(f'{settings.dummy_image_path}{choice([1,2,3])}.jpeg').read_bytes()
+			Path(self.pictures_path / (self.sanitize(target_id)+'.jpeg')).write_bytes(pic)
+			self.save_picture(None, self.pictures_path / (self.sanitize(target_id)+'.jpeg'))
 
 	def edit_entry(self, entry_id, otype = None, popup = None):
 		try:
