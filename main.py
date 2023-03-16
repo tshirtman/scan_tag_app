@@ -8,7 +8,7 @@ rune_otype = 'Ingwaz'
 from pathlib import Path
 from uuid import uuid4
 import logging
-from os import rename
+from shutil import move
 from os.path import join
 from zipfile import ZipFile
 from datetime import datetime
@@ -542,7 +542,7 @@ class mTag(App):
 	def save_picture(self, camera, filename):
 		# move to final path
 		p = Path( self.pictures_path / (self.sanitize(self.target_entry["id"])+'.jpeg') )
-		rename( filename, p )
+		move( filename, p )
 
 		# thumbnail generation
 		if THUMBNAILS:
