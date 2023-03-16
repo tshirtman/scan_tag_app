@@ -228,6 +228,7 @@ class mTag(App):
 		self.load_entries()
 		self.pictures_path.mkdir(parents=True, exist_ok=True)
 		self.thumbnails_path.mkdir(parents=True, exist_ok=True)
+		self.tmp_path.mkdir(parents=True, exist_ok=True)
 		self.gps_status = 'pre-init'
 
 		Window.bind(on_keyboard=self.onBackBtn)
@@ -346,6 +347,10 @@ class mTag(App):
 		return Path(self.user_data_dir, settings.sqldb)
 
 	@property
+	def tmp_path(self) -> Path:
+		return Path(self.user_data_dir, 'tmp')
+
+	@property
 	def pictures_path(self) -> Path:
 		return Path(self.user_data_dir, settings.bindir)
 
@@ -361,23 +366,7 @@ class mTag(App):
 			self.load_entries()
 		self.root.current = target
 
-	#def scan_id(self, get_uuid4=False):
-	def scan_id(self,otype = None, get_uuid4=False):
-		#if otype == None:
-		#	p = F.TypeSelPopup()
-		#	p.open()
-			#if self.target_entry['otype'] == 'shelf':
-			#	print("last item was a shelf.. what now?")
-			#	self.switch_screen("entries")
-			#	return
-			#elif self.target_entry['otype'] == 'set':
-			#	otype = 'box'
-			#elif self.target_entry['otype'] == 'box':
-			#	otype = 'part'
-			#elif self.target_entry['otype'] == 'part':
-			#	otype = 'part'
-
-
+	def scan_id(self, get_uuid4=False):
 		if not get_uuid4:
 			if platform == 'android':
 				F.ZBarCamPopup().open()
@@ -392,7 +381,7 @@ class mTag(App):
 		else:
 			# temporary hack to simulate scanning a code
 			# TODO allow webcam input or manual entry
-			Clock.schedule_once(lambda *_: self.edit_entry(enc(str(uuid4())),otype), 2)
+			Clock.schedule_once(lambda *_: self.edit_entry(enc(str(uuid4()))), 2)
 		#print('EDITED:',self.target_entry['id'], '(previous value ; this is WRONG!)') # TODO this is the _previous_ id!
 		#self.target_entry = get_entry(self.db, entry_id)
 
@@ -550,16 +539,21 @@ class mTag(App):
 			)
 
 	@mainthread
-	def save_picture(self, filename):
+	def save_picture(self, camera, filename):
+		# move to final path
+		p = Path( self.pictures_path / (self.sanitize(self.target_entry["id"])+'.jpeg') )
+		rename( filename, p )
+
 		# thumbnail generation
 		if THUMBNAILS:
-			thumbnail_path = str(filename).replace(settings.bindir,settings.thumbdir)
+			thumbnail_path = str(p).replace(settings.bindir,settings.thumbdir)
 			from PIL import Image
-			im = Image.open(filename)
+			im = Image.open(p)
 			im = im.resize(settings.thumbsize)
-			im.save( str(filename).replace(settings.bindir,settings.thumbdir) )
+			im.save( str(p).replace(settings.bindir,settings.thumbdir) )
 			im.close()
-			
+		
+		# quick loop to reload the thumbail in the main list
 		for w in self.root.get_screen("entries").walk():
 			if type(w) is EntryRow and w.id == self.target_entry["id"]:
 				for ww in w.walk():
@@ -568,7 +562,7 @@ class mTag(App):
 						ww.reload()
 						break
 
-		self.root.get_screen("editor").ids.picture.source = str(filename)
+		self.root.get_screen("editor").ids.picture.source = str(p)
 		self.root.get_screen("editor").ids.picture.reload()
 
 	def snap_picture(self, force = True):
@@ -576,7 +570,6 @@ class mTag(App):
 
 			force: if True, never open a zoomable image
 		'''
-		target_id = self.target_entry["id"]
 		if not force:
 			# open zoomable image (not used atm)
 			F.ZoomImagePopup().open()
@@ -593,10 +586,11 @@ class mTag(App):
 			except KeyboardInterrupt:
 				return 
 			else:
-				p = Path(self.pictures_path / (self.sanitize(target_id)+'.jpeg'))
-				is_written = cv2.imwrite(str(p), frame)
-				self.save_picture(p)
-				#print(f"image {'successfully' if is_written else 'was NOT'} saved to {p}")
+				p = str(Path( self.tmp_path / settings.tmp_cap_file ))
+				cv2.imwrite(p, frame)
+				print(f"wrote content to {p}")
+				# TODO compare/preview and confirm (if another file/photo exists)
+				self.save_picture(settings.video_dev, p)
 			finally:
 				# キャプチャリソースリリース
 				cap.release()
@@ -605,8 +599,8 @@ class mTag(App):
 			print("Info: no photo suport for this platform ; using dummy images")
 			from random import choice
 			pic = Path(f'{settings.dummy_image_path}{choice([1,2,3])}.jpeg').read_bytes()
-			Path(self.pictures_path / (self.sanitize(target_id)+'.jpeg')).write_bytes(pic)
-			self.save_picture(None, self.pictures_path / (self.sanitize(target_id)+'.jpeg'))
+			Path(self.tmp_path/settings.tmp_cap_file).write_bytes(pic)
+			self.save_picture(None, self.tmp_path+settings.tmp_cap_file)
 
 	def edit_entry(self, entry_id, otype = None, popup = None):
 		try:
@@ -648,7 +642,7 @@ class mTag(App):
 
 	def edit_text_field(self, index=None):
 		data = self.target_entry["text_fields"][index] if index is not None else {}
-		print(f"{self.target_entry = }")
+		#print(f"edit_text_field(): {self.target_entry = }")
 		p = F.TextFieldEditPopup(
 			title=dec(self.target_entry['id']),
 			index=index,
@@ -718,7 +712,9 @@ class mTag(App):
 				self.save_text_field( 'Ingwaz', None, 'ch.ju.sauser-frères', 'part' )
 				self.save_text_field( 'Isaz', None, 'box', self.box_id )
 				self.save_text_field( 'Isaz', None, 'set', self.set_id )
-			#save_entry(self.db, self.target_entry)  # TODO why is this needed here? it's already called by save_text_field()
+
+			# we used to call this again to delete the entries, but now it crashes the app
+			#save_entry(self.db, self.target_entry) 
 
 			self.switch_screen("entries")
 

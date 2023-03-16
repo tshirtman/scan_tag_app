@@ -1,12 +1,28 @@
 bindir = 'pictures'
 thumbdir = '.thumbnails'
 thumbsize = (64,48) # y-value should also be the height of small widgets
+tmp_cap_file = 'mtag_capture.jpeg'
+#
+# GUI settings
+#
 wheight = '48dp'    # height of small widgets
 Wheight = '64dp'    # larger widgets, such as main controls
+#
+# general settings
+#
+# for otype matching
+prefix = b'ch.engrenage'
 sqldb = 'data.sqlite3'
+encoding = 'utf-8'
+# will be simply stripped
 strprefix = (
     b'https://en.gren.ag/e/',
 )
+# UNIX
+video_dev = '/dev/video0'
+dummy_image_path = '/storage0/naspi/metameta/mtag/data/'
+export_dir = '/tmp/'
+
 presetkeys = {
     'shelf': (
         ( 0, 'Ansuz', 'location'),
@@ -48,10 +64,3 @@ known_protocols = (
     b'rsync://',
 )
 
-encoding = 'utf-8'
-# general settigs
-prefix = b'ch.engrenage'
-# UNIX
-video_dev = '/dev/video0'
-dummy_image_path = '/storage0/naspi/metameta/mtag/data/'
-export_dir = '/tmp/'

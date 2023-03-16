@@ -1,0 +1,6 @@
+.buildozer/
+*.swp
+__pycache__/
+bin/
+#
+

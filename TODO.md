@@ -1,16 +1,24 @@
-- Complete platform support for all features:
-    - Linux
-    - Android
-    - IOs
-    - OSX
-    - M$
-- Engine and Dictionnary support
-- Rune support
-- Definitely a way to copy-paste uuids
-- bytes_as_braille?
+# Features list
+
+                            Linux   Android IOs     OSX     M$
+
+    QR Scan to open/create      :]      :]
+    Take photo                  :]      :]
+    Import file                 :|      :S
+    QR data for input field     :]      :]
+    Dictionnary support
+    Rune support
+    copy-paste uuids
+    bytes_as_braille
+
+## Legend
+    :] working/done
+    :| WIP
+    :S WIP with something unexpectedly tricky
+
 
 # Known bugs
-- in main list, thumbnails are not updated with photo unless app is restarted ; placeholder thumbnail not working any more, pseudo-random image is displayed instead ; photos definitely part broken
-- hitting "save" on just a photo (no properties) will not save anything (except maybe junk in the storage) ; it should warn
+- hitting "save" on just a photo (without any property set) will not save anything (except maybe junk in the storage) ; it should warn
+- cannot delete text entries
 - geolocation not working
 

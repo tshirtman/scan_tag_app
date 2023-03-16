@@ -27,7 +27,7 @@ ScreenManager:
 		orientation: "vertical"
 		ZBarCam:
 			id: zbarcam
-			on_symbols: app.edit_entry(self.symbols[0], popup = self) if self.symbols else None
+			on_symbols: app.edit_entry(self.symbols[0], popup = root) if self.symbols else None
 		#RecycleView:
 		#	viewclass: "ZBarSelectButton"
 		#	data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]
@@ -259,26 +259,6 @@ ScreenManager:
 	size_hint: 2, None
 	on_release: app.scan_id(get_uuid4=True)
 	background_color: (.8,.6,0.15,1)
-
-<QRScanButtonShelf@AppButton>:
-	text: '+ shelf'
-	on_release: app.scan_id('shelf')
-	background_color: (.99,.75,0.25,1)
-
-<QRScanButtonSet@AppButton>:
-	text: '+ set'
-	on_release: app.scan_id('set')
-	background_color: (.99,.75,0.25,1)
-
-<QRScanButtonBox@AppButton>:
-	text: '+ box'
-	on_release: app.scan_id('box')
-	background_color: (.99,.75,0.25,1)
-
-<QRScanButtonPart@AppButton>:
-	text: '+ part'
-	on_release: app.scan_id('part')
-	background_color: (.99,.75,0.25,1)
 
 <QRScanValueButton@AppButton>:
 	text: 'QR'
