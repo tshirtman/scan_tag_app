@@ -178,33 +178,6 @@ class oType:
 	def get(self, x,y):
 		#print(f"oType.get({x},{y})")
 		return y
-		#match x:
-		#	case 'width':
-		#		return 42
-		#	case 'height':
-		#		return 12
-		#	case 'size':
-		#		return [0,48]
-		#	case 'pos_hint':
-		#		return 0,0
-		#	case 'size_hint':
-		#		return 1,None
-		#	case 'size_hint_min':
-		#		return 1,None
-		#	case 'size_hint_max':
-		#		return 1,None
-		#	case 'size_hint_x':
-		#		return 1
-		#	case 'size_hint_y':
-		#		return None
-		#	case 'size_hint_min_x':
-		#		return 1
-		#	case 'size_hint_min_y':
-		#		return None
-		#	case 'size_hint_max_x':
-		#		return 1
-		#	case 'size_hint_max_y':
-		#		return None
 
 #
 # Kivy Application
@@ -296,6 +269,7 @@ class mTag(App):
 			else:
 				print("gps.py: Android detected. Requesting permissions")
 				self.request_android_permissions()
+				print("gps.py: Permissions requested.")
 				return True
 		else:
 			self.gps_status = msg_nogps
@@ -308,7 +282,9 @@ class mTag(App):
 		if ( self.gps_status == 'pre-init' and self.GPSinit() ) or \
 			self.gps_status not in ( msg_nogps, 'pre-init', ):
 			try:
+				print(f"gps.start({minTime=}, {minDistance=})")
 				gps.start(minTime, minDistance)
+				print("gps.start(): done")
 			except NotImplementedError:
 				self.gps_location = msg_nogps
 				widget.text = msg_nogps
@@ -660,6 +636,7 @@ class mTag(App):
 		errors = []
 
 		# making sure we have all the required values
+		# AUTOTYPE
 		required_props = []
 		if otype is not None:   # TODO otype must be a list!
 			for prop in settings.presetkeys[otype]:
@@ -674,6 +651,7 @@ class mTag(App):
 		for prop in required_props:
 			errors.append(f"ERROR: '{prop}' is not set when it should be")
 
+		# TODO: this is hardcoded when it really should not be!
 		if otype == 'box':
 			self.box_id = entry_id
 			try:
@@ -713,7 +691,9 @@ class mTag(App):
 				self.save_text_field( 'Isaz', None, 'box', self.box_id )
 				self.save_text_field( 'Isaz', None, 'set', self.set_id )
 
+
 			# we used to call this again to delete the entries, but now it crashes the app
+			# ATM, entries CAN NOT be deleted (TODO)
 			#save_entry(self.db, self.target_entry) 
 
 			self.switch_screen("entries")
