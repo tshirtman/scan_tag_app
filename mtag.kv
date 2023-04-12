@@ -43,7 +43,7 @@ ScreenManager:
 		orientation: "vertical"
 		ZBarCam:
 			id: zbarcam
-			on_symbols: app.edit_entry(self.symbols[0]) if self.symbols else None
+			on_symbols: app.value = self.symbols[0] if self.symbols else None
 		#RecycleView:
 		#	viewclass: "ZBarSelectValueButton"
 		#	data: [{"text": value.data.decode("utf8"), "popup": root} for value in zbarcam.symbols]

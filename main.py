@@ -351,7 +351,7 @@ class mTag(App):
 				if _qr is not None:
 					# Clock is optional there
 					#Clock.schedule_once(lambda *_: self.edit_entry( _qr, otype), 2)
-					self.edit_entry( _qr, otype)
+					self.edit_entry( _qr )
 			else:
 				print(f"unkown {platform = }")
 		else:
@@ -381,7 +381,6 @@ class mTag(App):
 				self.value = _qr
 		else:
 			# temporary hack to simulate scanning a code
-			# TODO allow webcam input
 			id = str(uuid4())
 			self.value = id
 
