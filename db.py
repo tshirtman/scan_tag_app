@@ -4,6 +4,7 @@ from pathlib import Path
 import logging
 
 from sqlalchemy.orm import declarative_base, relationship, Session
+
 from sqlalchemy import (
     Boolean,
     Column,
@@ -46,14 +47,13 @@ class Entry(Base):
     fields = relationship('TextField', back_populates='entry')
 
 
-
 @singledispatch
 def to_dict(arg: object):
     raise ValueError("to_dict not implemented for %s" % arg)
 
 
 @to_dict.register
-def _to_dict(entry: Entry, full=False):
+def entry_to_dict(entry: Entry, full=False):
     return {
         'id': entry.id,
         'created': entry.created,
@@ -71,7 +71,7 @@ def _to_dict(entry: Entry, full=False):
 
 
 @to_dict.register
-def _to_dict(text_field: TextField):
+def text_field_to_dict(text_field: TextField):
     return {
         'rune': text_field.rune,
         'key': text_field.key,
